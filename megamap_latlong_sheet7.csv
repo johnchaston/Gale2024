@@ -1,0 +1,35 @@
+row,column,plot,symbol,location,sortorder
+1,1,vineyard,1,tiger mountain,7
+1,1,orchard,1,brysons,13
+4,1,utah,1,santaquin,30
+9,1,orchard,2,carter hill,20
+5,1,utah,2,martells,31
+3,1,vineyard,3,blenheim,9
+3,1,orchard,3,carter mtn,15
+9,1,amber,4,shoreham,2
+9,1,ec,5,durham,25
+6,1,utah,5,alpine,32
+7,1,utah,6,ogden,33
+2,1,vineyard,7,burnt shirt,8
+2,1,orchard,7,grandaddys,14
+8,1,utah,7,logan,34
+8,1,amber,8,harvard,3
+8,1,ec,8,harvard,26
+5,1,amber,9,linvilla,6
+5,1,ec,9,media,28
+4,1,vineyard,10,boordys,10
+4,1,orchard,10,lohrs,16
+4,1,ec,10,lohrs,29
+11,1,orchard,12,north chester,22
+10,1,amber,0,walpole,1
+10,1,orchard,13,rocky ridge,21
+10,1,ec,13,rocky ridge,24
+6,1.05,orchard,17,solebury,18
+7,1,vineyard,15,taylor brooke,12
+7,1,orchard,15,woodstock,19
+6,1,amber,16,terhune,5
+6,0.95,orchard,16,terhune,17
+6,1,vineyard,14,unionville,11
+11,1,ec,6,etna,23
+7,1,amber,18,middlefield,4
+7,1,ec,18,middlefield,27
