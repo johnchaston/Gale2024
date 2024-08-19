@@ -1,0 +1,8 @@
+"","cluster","pval","rho","sum","fdr"
+"1","k__Bacteria_ p__Firmicutes_ c__Bacilli",1.56477750035144e-05,0.488244896058056,498,0.000109534425024601
+"2","k__Bacteria_ p__Bacteroidetes_ c__Bacteroidia",0.000631756458538336,0.39591333780706,252,0.00221114760488417
+"3","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria",0.00227713919741822,-0.356493590494799,29989,0.00531332479397585
+"4","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria",0.0460577616051286,0.23756247379805,4518,0.080601082808975
+"5","k__Bacteria_ p__Actinobacteria_ c__Actinobacteria",0.468436632666516,0.0874315817070569,28,0.655811285733123
+"6","k__Bacteria_ p__Proteobacteria_ c__Betaproteobacteria",0.621177201122217,0.0596552926762029,30,0.724706734642586
+"7","k__Bacteria_ p__Bacteroidetes_ c__Flavobacteriia",0.784934145508173,-0.0329629365667582,127,0.784934145508173

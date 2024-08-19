@@ -1,0 +1,11 @@
+"","cluster","pval","rho","sum","fdr"
+"1","k__Bacteria_ p__Proteobacteria_ c__Betaproteobacteria_ o__Burkholderiales",0.0231101842087438,-0.269367585811609,29,0.231101842087438
+"2","k__Bacteria_ p__Bacteroidetes_ c__Flavobacteriia_ o__Flavobacteriales",0.0477056722947174,-0.235840622756302,127,0.238528361473587
+"3","k__Bacteria_ p__Bacteroidetes_ c__Bacteroidia_ o__Bacteroidales",0.31635228002458,-0.120619525209013,252,0.867399576725051
+"4","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Xanthomonadales",0.34695983069002,-0.113267874593208,49,0.867399576725051
+"5","k__Bacteria_ p__Actinobacteria_ c__Actinobacteria_ o__Actinomycetales",0.634882257830417,-0.0573274408797112,28,0.950070798677794
+"6","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales",0.636844637198148,-0.0569958462284124,492,0.950070798677794
+"7","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Pasteurellales",0.703563621256716,-0.0459505040739313,1627,0.950070798677794
+"8","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales",0.889465778122286,-0.01679079577823,29378,0.950070798677794
+"9","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_NA",0.89950638519594,0.0152572108990785,732,0.950070798677794
+"10","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales",0.950070798677794,0.00756555865646999,2083,0.950070798677794

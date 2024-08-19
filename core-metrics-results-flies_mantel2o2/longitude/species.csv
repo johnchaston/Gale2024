@@ -1,0 +1,18 @@
+"","cluster","pval","rho","sum","fdr"
+"1","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales_ f__Leuconostocaceae_ g__Leuconostoc_NA",0.00060431649612412,0.397194921496507,346,0.00549043448396897
+"2","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Pasteurellales_ f___ g___ s__",0.000958381679675306,0.383628807708501,1627,0.00549043448396897
+"3","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales_ f__Lactobacillaceae_ g__Lactobacillus_ s__",0.000968900203053347,0.383300606495791,28,0.00549043448396897
+"4","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales_ f__Streptococcaceae_ g__Lactococcus_ s__",0.0133284122434042,0.29245205638055,41,0.0566457520344679
+"5","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales_ f__Enterobacteriaceae_NA_NA",0.0257195292470516,0.26466059743268,1188,0.0874463994399755
+"6","k__Bacteria_ p__Bacteroidetes_ c__Bacteroidia_ o__Bacteroidales_ f__Porphyromonadaceae_ g___ s__",0.0617413791578447,0.222866975311549,192,0.167811852784262
+"7","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales_ f__Enterobacteriaceae_ g__Tatumella_ s__punctata",0.0690989982052843,0.21700309904354,627,0.167811852784262
+"8","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Gluconacetobacter_ s__intermedius",0.228527091953415,-0.144722748404958,137,0.450810127537762
+"9","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter_ s__intestini",0.23866418516705,-0.141650159851255,10968,0.450810127537762
+"10","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_NA_NA",0.303044127736525,0.123957949820552,1167,0.515175017152093
+"11","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_NA_NA_NA_NA",0.336087030135056,-0.115830696476852,732,0.51940722839054
+"12","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Xanthomonadales_ f__Xanthomonadaceae_ g__Frateuria_ s__aurantia",0.408947392816719,0.0995210638176631,38,0.579342139823686
+"13","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter_ s__",0.512930049690874,0.078928713319625,7851,0.670754680364989
+"14","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter_NA",0.628226441533681,-0.0584552939134613,99,0.728623716575815
+"15","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales_ f__Enterobacteriaceae_ g__Providencia_ s__",0.643446709171869,0.0558833241689717,26,0.728623716575815
+"16","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Gluconacetobacter_NA",0.685763497953708,-0.0488570046681258,1919,0.728623716575815
+"17","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Gluconobacter_ s__",0.840414600292065,0.0243256615197526,6891,0.840414600292065

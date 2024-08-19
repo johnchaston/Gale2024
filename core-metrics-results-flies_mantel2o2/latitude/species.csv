@@ -1,0 +1,18 @@
+"","cluster","pval","rho","sum","fdr"
+"1","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Pasteurellales_ f___ g___ s__",0.000966202944017001,-0.383384458149451,1627,0.016425450048289
+"2","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales_ f__Leuconostocaceae_ g__Leuconostoc_NA",0.00232136495346419,-0.355863184890181,346,0.0195671348562039
+"3","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales_ f__Lactobacillaceae_ g__Lactobacillus_ s__",0.00345302379815362,-0.342557550803412,28,0.0195671348562039
+"4","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales_ f__Enterobacteriaceae_NA_NA",0.00544211306695003,-0.326580806359496,1188,0.0231289805345376
+"5","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales_ f__Enterobacteriaceae_ g__Tatumella_ s__punctata",0.0131606328339778,-0.292962699359039,627,0.0447461516355246
+"6","k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales_ f__Streptococcaceae_ g__Lactococcus_ s__",0.0171681066548582,-0.28205862915837,41,0.0486429688554315
+"7","k__Bacteria_ p__Bacteroidetes_ c__Bacteroidia_ o__Bacteroidales_ f__Porphyromonadaceae_ g___ s__",0.0840471726868204,-0.206486037087489,192,0.204114562239421
+"8","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter_ s__intestini",0.127220680224236,0.182718223622882,10968,0.270343945476502
+"9","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Gluconacetobacter_ s__intermedius",0.297056190599798,0.125491118963043,137,0.515267314989767
+"10","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_NA_NA_NA_NA",0.303355120146606,0.123878863607278,732,0.515267314989767
+"11","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Xanthomonadales_ f__Xanthomonadaceae_ g__Frateuria_ s__aurantia",0.356009945564329,-0.111172572233327,38,0.515267314989767
+"12","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_NA_NA",0.363718104698659,-0.10941373203574,1167,0.515267314989767
+"13","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Gluconacetobacter_NA",0.448980036360674,0.0912856807472077,1919,0.587127739856266
+"14","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter_NA",0.548679365557448,0.0723671685669121,99,0.666253515319758
+"15","k__Bacteria_ p__Proteobacteria_ c__Gammaproteobacteria_ o__Enterobacteriales_ f__Enterobacteriaceae_ g__Providencia_ s__",0.651992955520995,-0.0544500434130022,26,0.738925349590461
+"16","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter_ s__",0.811847304394472,-0.0287551384357854,7851,0.825886309919468
+"17","k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Gluconobacter_ s__",0.825886309919468,-0.0265739679701536,6891,0.825886309919468
