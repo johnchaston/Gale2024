@@ -125,6 +125,55 @@ get_core_features <- function(file_path = file_path, map_path = map_path, mapper
   return(phyl2$clustered_taxonomy[rowSums(phyl3>0)/dim(phyl3)[2]>similarity_cutoff])
 }
 get_single_core_features <- function(file_path = file_path, map_path = map_path, mapper_file = mapper_file, taxonomic_level = taxonomic_level, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, the_id = "X.SampleID") {
+  otu_table1 <- read.table(paste('core-metrics-results-',file_path,'/rarefied_table.txt',sep=""), comment.char="", header=T, sep="\t", fill=T, skip=1) %>% 
+    left_join(read.csv(paste0('taxonomy',map_path,'/taxonomy_forR.csv')), by=c("X.OTU.ID"="Feature.ID"))
+
+  ref_names <- subset(colnames(otu_table1), (colnames(otu_table1)%in%c("X.OTU.ID","kingdom","phylum","class","order","family","genus","species")==F))
+  
+  #  otu_table$X.OTU.ID <- as.factor(otu_table$X.OTU.ID)
+  
+  #  taxonomic_level <- "X.OTU.ID"
+  ## Cluster rows by taxonomy hierarchically 
+  taxon_vector <- c("kingdom","phylum","class","order","family","genus","species","X.OTU.ID")
+  taxon_number <- which(taxon_vector==taxonomic_level)
+  taxon_vector2 <- c()
+  for (i in 1:taxon_number) {
+    taxon_vector2 <- c(taxon_vector2,taxon_vector[i])
+  }
+  
+  if(taxonomic_level!="X.OTU.ID") {
+    otu2 <- otu_table1[,c("X.OTU.ID",taxon_vector2)] %>% 
+      tidyr::unite(clustered_taxonomy, (taxon_vector[1:length(taxon_vector2)])) %>%
+      mutate(clustered_taxonomy = as.character(clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = " ",replacement = "",x = clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = "^__",replacement = "__unassigned",x = clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = "___",replacement = "__unassigned_",x = clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = "__$",replacement = "__unassigned",x = clustered_taxonomy))
+  } else if (taxonomic_level == "X.OTU.ID") {
+    otu2 <- otu_table1[,c("X.OTU.ID",taxon_vector2)] %>% 
+      mutate(OTUID2 = X.OTU.ID) %>%
+      tidyr::unite(clustered_taxonomy, c(taxon_vector[1:7],"OTUID2")) %>%
+      mutate(clustered_taxonomy = as.character(clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = " ",replacement = "",x = clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = "^__",replacement = "__unassigned",x = clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = "___",replacement = "__unassigned_",x = clustered_taxonomy)) %>%
+      mutate(clustered_taxonomy = gsub(pattern = "__$",replacement = "__unassigned",x = clustered_taxonomy)) %>%
+      dplyr::select(-X.OTU.ID.1)
+    
+  } 
+  
+  map2 <- read.table(mapper_file,comment.char = "", header=T, fill=T,sep="\t") %>% dplyr::select(any_of(c(the_id,var1, var2, var3, var4, var5, Group)))
+  
+  phyl2 <- otu_table1 %>% 
+    inner_join(otu2, by = "X.OTU.ID") %>%
+    group_by(clustered_taxonomy) %>% 
+    summarize_at(ref_names,sum, na.rm=T)
+  rownames(phyl2) <- as.character(unlist(phyl2$clustered_taxonomy))
+  
+  return(phyl2)
+}
+
+get_single_core_features_original <- function(file_path = file_path, map_path = map_path, mapper_file = mapper_file, taxonomic_level = taxonomic_level, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, the_id = "X.SampleID") {
   otu_table <- read.table(paste('core-metrics-results-',file_path,'/rarefied_table.txt',sep=""), comment.char="", header=T, sep="\t", fill=T, skip=1) %>% 
     left_join(read.csv(paste0('taxonomy',map_path,'/taxonomy_forR.csv')), by=c("X.OTU.ID"="Feature.ID"))
   
@@ -174,8 +223,9 @@ get_single_core_features <- function(file_path = file_path, map_path = map_path,
   return(phyl2)
 }
 
-tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1, map_path = map_path) {
-  starved_fruit_venn <- get_single_core_features(file_path = file_path, map_path = map_path, taxonomic_level = taxonomic_level)
+tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1, map_path = map_path,mapper_file = mapper_file) {
+  
+  starved_fruit_venn <- get_single_core_features2(file_path = file_path, mapper_file = mapper_file, map_path = map_path, taxonomic_level = taxonomic_level, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, the_id = "X.SampleID")
   starved_fruit_venn$clustered_taxonomy = gsub("[", replacement = "", starved_fruit_venn$clustered_taxonomy, fixed=T)
   starved_fruit_venn$clustered_taxonomy = gsub("]", replacement = "", starved_fruit_venn$clustered_taxonomy, fixed=T)
   
@@ -207,6 +257,7 @@ tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = t
   }
   return(out_df)
 }
+
 
 tabulate_individual_venns_original <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1) {
   
