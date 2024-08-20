@@ -1,0 +1,22 @@
+Permanova tables
+unweighted_unifrac
+Df	SumOfSqs	R2	F	Pr(>F)
+fp_subsite	1	0.56	0.1	4.49	0
+orchard	2	0.44	0.08	1.78	0.03
+fp_subsite:orchard	2	0.28	0.05	1.13	0.29
+Residual	33	4.1	0.76	NA	NA
+Total	38	5.38	1	NA	NA
+weighted_unifrac
+Df	SumOfSqs	R2	F	Pr(>F)
+fp_subsite	1	0.11	0.08	3.53	0.02
+orchard	2	0.12	0.08	1.89	0.1
+fp_subsite:orchard	2	0.17	0.12	2.77	0.03
+Residual	33	1.02	0.72	NA	NA
+Total	38	1.41	1	NA	NA
+bray_curtis
+Df	SumOfSqs	R2	F	Pr(>F)
+fp_subsite	1	0.87	0.07	3.25	0
+orchard	2	1.71	0.14	3.2	0
+fp_subsite:orchard	2	1.26	0.1	2.35	0
+Residual	33	8.82	0.7	NA	NA
+Total	38	12.65	1	NA	NA
