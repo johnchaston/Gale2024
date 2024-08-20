@@ -1,0 +1,34 @@
+Permanova tables
+unweighted_unifrac
+Df	SumOfSqs	R2	F	Pr(>F)
+fruit	1	0.96	0.03	6.64	0
+lineartime	1	0.78	0.03	5.41	0
+sex	1	0.43	0.01	3	0
+wolbachia	1	0.26	0.01	1.8	0.06
+fruit:pile	5	1.49	0.05	2.07	0
+fruit:lineartime	1	0.5	0.02	3.45	0
+fruit:lineartime:pile	5	1.08	0.04	1.5	0.02
+Residual	168	24.17	0.81	NA	NA
+Total	183	29.67	1	NA	NA
+weighted_unifrac
+Df	SumOfSqs	R2	F	Pr(>F)
+fruit	1	0.18	0.04	8.72	0
+lineartime	1	0.22	0.05	10.5	0
+sex	1	0.04	0.01	1.68	0.12
+wolbachia	1	0.05	0.01	2.36	0.05
+fruit:pile	5	0.14	0.03	1.36	0.12
+fruit:lineartime	1	0.02	0	0.74	0.56
+fruit:lineartime:pile	5	0.2	0.05	1.94	0.04
+Residual	168	3.53	0.81	NA	NA
+Total	183	4.38	1	NA	NA
+bray_curtis
+Df	SumOfSqs	R2	F	Pr(>F)
+fruit	1	3.21	0.05	11.79	0
+lineartime	1	3.03	0.05	11.15	0
+sex	1	0.69	0.01	2.53	0
+wolbachia	1	0.49	0.01	1.81	0.03
+fruit:pile	5	5.4	0.09	3.97	0
+fruit:lineartime	1	0.97	0.02	3.57	0
+fruit:lineartime:pile	5	3.2	0.05	2.36	0
+Residual	168	45.7	0.73	NA	NA
+Total	183	62.7	1	NA	NA
