@@ -173,7 +173,42 @@ get_single_core_features <- function(file_path = file_path, map_path = map_path,
   
   return(phyl2)
 }
-tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1) {
+
+tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1, map_path = map_path) {
+  starved_fruit_venn <- get_single_core_features(file_path = file_path, map_path = map_path, taxonomic_level = taxonomic_level)
+  starved_fruit_venn$clustered_taxonomy = gsub("[", replacement = "", starved_fruit_venn$clustered_taxonomy, fixed=T)
+  starved_fruit_venn$clustered_taxonomy = gsub("]", replacement = "", starved_fruit_venn$clustered_taxonomy, fixed=T)
+  
+  orchard_site_names <- otu_table %>% filter(X.SampleID %in% colnames(starved_fruit_venn)) %>% dplyr::pull(orchard_subsite) %>% table() %>% data.frame()
+  
+  group1name = strsplit(file_path, split = "_", fixed = T)[[1]][2]
+  group2name = strsplit(file_path, split = "_", fixed = T)[[1]][3]
+  
+  out_df <- data.frame(orchard_subsite = character(), group1 = character(), group2 = character(), unique1 = numeric, shared = numeric(), unique2 = numeric)
+  
+  for (i in orchard_site_names$.) {
+    sample_names <- otu_table %>% filter(orchard_subsite == i) %>% dplyr::pull(X.SampleID)
+    filtered_names <- sample_names[sample_names %in% colnames(starved_fruit_venn)]
+    two_way <- data.frame(starved_fruit_venn) %>% dplyr::select(clustered_taxonomy, all_of(filtered_names))
+    groupinl1 = (two_way %>% filter(.[[2]] > threshhold) %>% dplyr::pull(clustered_taxonomy))
+    groupinl2 = two_way %>% filter(.[[3]] > threshhold) %>% dplyr::pull(clustered_taxonomy)
+    try(two_way_venns <- VennDiagram::get.venn.partitions(x = list(group1 = groupinl1, group2 = groupinl2)))
+    if(class(try(two_way_venns <- VennDiagram::get.venn.partitions(x = list(group1 = groupinl1, group2 = groupinl2)),F))!="try-error") {
+      two_way_venns <- VennDiagram::get.venn.partitions(x = list(group1 = groupinl1, group2 = groupinl2))
+      out_df <- rbind(out_df, data.frame(orchard_subsite = as.character(i), 
+                                         group1 = as.character(group1name), 
+                                         group2 = as.character(group2name), 
+                                         unique1 = as.numeric(two_way_venns %>% filter(group1 == T, group2 == F) %>% dplyr::pull(..count..)), 
+                                         shared = as.numeric(two_way_venns %>% filter(group1 == T, group2 == T) %>% dplyr::pull(..count..)),
+                                         unique2 = as.numeric(two_way_venns %>% filter(group1 == F, group2 == T) %>% dplyr::pull(..count..)))
+      )
+      
+    }
+  }
+  return(out_df)
+}
+
+tabulate_individual_venns_original <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1) {
   
   starved_fruit_venn <- get_single_core_features(file_path = file_path, map_path = map_path, mapper_file = mapper_file, taxonomic_level = taxonomic_level,var1=var1, var2=var2, var3=var3,var4=var4, Group = Group)
   starved_fruit_venn$clustered_taxonomy = gsub("[", replacement = "", starved_fruit_venn$clustered_taxonomy, perl = T, fixed=T)
