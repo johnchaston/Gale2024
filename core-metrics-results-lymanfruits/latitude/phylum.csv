@@ -1,0 +1,16 @@
+"","cluster","pval","rho","sum","fdr"
+"1","k__Bacteria_",NA,NA,21,NA
+"2","k__Bacteria_ p__[Thermi]",NA,NA,4,NA
+"3","k__Bacteria_ p__Acidobacteria",NA,NA,1,NA
+"4","k__Bacteria_ p__Actinobacteria",NA,NA,95,NA
+"5","k__Bacteria_ p__Bacteroidetes",NA,NA,225,NA
+"6","k__Bacteria_ p__Chlorobi",NA,NA,1,NA
+"7","k__Bacteria_ p__Chloroflexi",NA,NA,5,NA
+"8","k__Bacteria_ p__Cyanobacteria",NA,NA,2,NA
+"9","k__Bacteria_ p__Firmicutes",NA,NA,315,NA
+"10","k__Bacteria_ p__GN02",NA,NA,2,NA
+"11","k__Bacteria_ p__Planctomycetes",NA,NA,27,NA
+"12","k__Bacteria_ p__Proteobacteria",NA,NA,3131,NA
+"13","k__Bacteria_ p__TM6",NA,NA,1,NA
+"14","k__Bacteria_ p__Verrucomicrobia",NA,NA,9,NA
+"15","k__Bacteria_ p__WS3",NA,NA,1,NA
