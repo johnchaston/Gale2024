@@ -225,7 +225,7 @@ get_single_core_features_original <- function(file_path = file_path, map_path = 
 
 tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = taxonomic_level, otu_table = otu_table, threshhold = 1, map_path = map_path,mapper_file = mapper_file) {
   
-  starved_fruit_venn <- get_single_core_features2(file_path = file_path, mapper_file = mapper_file, map_path = map_path, taxonomic_level = taxonomic_level, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, the_id = "X.SampleID")
+  starved_fruit_venn <- get_single_core_features(file_path = file_path, mapper_file = mapper_file, map_path = map_path, taxonomic_level = taxonomic_level, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, the_id = "X.SampleID")
   starved_fruit_venn$clustered_taxonomy = gsub("[", replacement = "", starved_fruit_venn$clustered_taxonomy, fixed=T)
   starved_fruit_venn$clustered_taxonomy = gsub("]", replacement = "", starved_fruit_venn$clustered_taxonomy, fixed=T)
   
