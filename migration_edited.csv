@@ -1,0 +1,13 @@
+﻿Samples,i,j,migrationVself,migrationVother,selfSEM,group1,group2,AIC
+23,mantel_starved_unstarved_S,mantel_starved_unstarved_U,0.01961632,self,0.004464012,starved,unstarved,-234.186518
+23,mantel_starved_unstarved_U,mantel_starved_unstarved_S,0.017696624,self,0.003999005,unstarved,starved,-214.5261
+35,mantel_starved_fruit_F,mantel_starved_fruit_S,0.014125338,self,0.001528866,fruit,starved,-1407.83931
+35,mantel_starved_fruit_S,mantel_starved_fruit_F,0.017571399,self,0.002561074,starved,fruit,-632.081168
+35,mantel_unstarved_fruit_F,mantel_unstarved_fruit_U,0.013860156,self,0.001430087,fruit,unstarved,-1810.551895
+35,mantel_unstarved_fruit_U,mantel_unstarved_fruit_F,0.015235707,self,0.002479653,unstarved,fruit,-417.436081
+23,mantel_starved_unstarved_S,mantel_starved_unstarved_U,0.018730234,other,0.005755688,starved,unstarved,-44.021004
+23,mantel_starved_unstarved_U,mantel_starved_unstarved_S,0.020396366,other,0.008080059,unstarved,starved,-16.058453
+35,mantel_starved_fruit_F,mantel_starved_fruit_S,0.01512433,other,0.006263983,fruit,starved,-43.947157
+35,mantel_starved_fruit_S,mantel_starved_fruit_F,0.011418761,other,0.003243097,starved,fruit,-91.943347
+35,mantel_unstarved_fruit_F,mantel_unstarved_fruit_U,0.01632716,other,0.005459536,fruit,unstarved,-111.044568
+35,mantel_unstarved_fruit_U,mantel_unstarved_fruit_F,0.01337449,other,0.003553218,unstarved,fruit,-85.744157
