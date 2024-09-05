@@ -413,7 +413,7 @@ mantel_EC21_M <- function(mapper_name, bc_name, metadata_name) {
 
 mantel_EC18 <- function(mapper_name, file_path, metadata_name, cols_to_test = NULL, metric_to_test = "bray_curtis") {
   test1 <- read.table(mapper_name, sep = "\t", comment.char = "", header = T) %>%
-    inner_join(read.table(paste0('~/Dropbox/east_coast_flies_manuscript/mantel/',metadata_name), sep = "\t", header=T, comment.char = ""), by = c("location")) 
+    inner_join(read.table(paste0(metadata_name), sep = "\t", header=T, comment.char = ""), by = c("location")) 
   
   write.table(test1, paste0("mantel_",mapper_name), row.names = F, quote = F, sep = "\t")
   
@@ -463,7 +463,7 @@ mantel_UT20 <- function(mapper_name, file_path, metadata_name, cols_to_test = NU
     mutate(latitude = as.character(recode_factor(location, `Alpine, UT` = "40.4457589", `Santaquin, UT` = "39.966865", `Lindon1, UT` = "40.3327707", `Logan, UT` = "41.72573", `Ogden, UT` = "41.326252", `Lindon2, UT` = "40.3327707", `Lindon3, UT` = "40.3327707"))) %>% 
     mutate(longitude = as.character(recode_factor(location, `Alpine, UT` = "-111.7818936", `Santaquin, UT` = "-111.791562", `Lindon1, UT` = "-111.7219739", `Logan, UT` = "-111.809883", `Ogden, UT` = "-112.011375", `Lindon2, UT` = "-111.7219739", `Lindon3, UT` = "-111.7219739"))) %>%
     mutate(date = as.character(recode_factor(location, `Alpine, UT` = "44113", `Santaquin, UT` = "44114", `Lindon1, UT` = "44103", `Logan, UT` = "44112", `Ogden, UT` = "44113", `Lindon2, UT` = "44110", `Lindon3, UT` = "44114"))) %>%
-    inner_join(read.table(paste0('~/Dropbox/east_coast_flies_manuscript/mantel/',metadata_name), sep = "\t", header=T, comment.char = ""), by = c("location")) 
+    inner_join(read.table(paste0(metadata_name), sep = "\t", header=T, comment.char = ""), by = c("location")) 
   
   write.table(test1, paste0("mantel_",mapper_name), row.names = F, quote = F, sep = "\t")
   
@@ -516,7 +516,7 @@ mantel_EC21seq <- function(mapper_name, file_path, metadata_name, cols_to_test =
     mutate(latitude = as.character(recode_factor(site, `Durham, NH` = "43.08745", `Etna, ME` = "44.82082", `Charlottesville, VA` = "38.07474", `Churchville, MD` = "39.539", `Media, PA` = "39.90924", `Middlefield, CT` = "41.49383", `Harvard, MA` = "42.50867", `Bowdoin, ME` = "44.0253"))) %>% 
     mutate(longitude = as.character(recode_factor(site, `Durham, NH` = "-71.04666", `Etna, ME` = "-69.11144", `Charlottesville, VA` = "-78.38155", `Churchville, MD` = "-76.2399", `Media, PA` = "-75.40529", `Middlefield, CT` = "-72.71145", `Harvard, MA` = "-71.57071", `Bowdoin, ME` = "-69.94379"))) %>% 
     mutate(longitude = as.character(recode_factor(site, `Durham, NH` = "44469.00", `Etna, ME` = "44468.00", `Charlottesville, VA` = "44489.00", `Churchville, MD` = "44490.00", `Media, PA` = "44497.00", `Middlefield, CT` = "44470.00", `Harvard, MA` = "44469.00", `Bowdoin, ME` = "44468.00"))) %>% 
-    inner_join(read.table(paste0('~/Dropbox/east_coast_flies_manuscript/mantel/',metadata_name), sep = "\t", header=T, comment.char = ""), by = c("location")) 
+    inner_join(read.table(paste0(metadata_name), sep = "\t", header=T, comment.char = ""), by = c("location")) 
   
   write.table(test1, paste0("mantel_",mapper_name), row.names = F, quote = F, sep = "\t")
   
