@@ -78,12 +78,13 @@ make_taxonomy_forR <- function(taxon_file_path) {
   write.csv(taxa_table, file = paste0(taxon_file_path,"/taxonomy_forR.csv"), quote = F, sep = ",", row.names = F)
 }
 
-setwd('~/Dropbox/sequencing/2022-09-henry/')
-mapper_cols <- c("AvgRH","latitude","date","MaxTemp", "MaxcDNI")
-mapper_file = "mantel_henrymapper2_JMC.txt"
-file_path = "flies_mantel2v2"
-metric="bray_curtis"
-calc_mantel_microbiome <- function(file_path = file_path, metric = "bray_curtis", mapper_file = mapper_file, mapper_cols = mapper_cols) {
+#setwd('~/Dropbox/sequencing/2022-09-henry/')
+#mapper_cols <- c("AvgRH","latitude","date","MaxTemp", "MaxcDNI")
+#mapper_file = "mantel_henrymapper2_JMC.txt"
+#file_path = "flies_mantel2v2"
+#metric="bray_curtis"
+
+calc_mantel_microbiome <- function(file_path = file_path, metric = "bray_curtis", mapper_file = mapper_file, mapper_cols = mapper_cols, filter = F) {
   
   ## make the micro
   dm <- read.table(paste('core-metrics-results-',file_path,'/',metric,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t") %>% mutate(X=as.character(X))
@@ -92,14 +93,25 @@ calc_mantel_microbiome <- function(file_path = file_path, metric = "bray_curtis"
   ## make the metadata matrix
   metadata <- dm %>% 
     dplyr::select(X) %>% 
-    left_join(read.table(mapper_file,comment.char = "", header=T, fill=T, sep="\t"), by=c("X"="X.SampleID")) %>% 
+    inner_join(read.table(mapper_file,comment.char = "", header=T, fill=T, sep="\t"), by=c("X"="X.SampleID")) %>% 
     droplevels() 
+  metadata$Latitude
   fut <- as.matrix(metadata %>% dplyr::select(all_of(mapper_cols)))
   fut2 <- (fut)
   rownames(fut2) <- metadata$X
   futmat <- dist(fut2)
+  
+  if (filter == T) {
+    dmdist <- as.dist(dm %>% filter(X %in% metadata$X) %>% dplyr::select(all_of(metadata$X)))
+    cat("filtering on ...")
+  }
+  
   cat("dimensions: ")
   print(dim(futmat))
+  print(dim(dmdist))
+  
+  sum(is.na(futmat))
+  sum(is.na(dmdist))
   
   set.seed(43)
   mantel1 <- mantel(log10(futmat+1),log10(dmdist+1), method = "spearman", parallel = 7)
@@ -115,6 +127,39 @@ calc_mantel_microbiome <- function(file_path = file_path, metric = "bray_curtis"
   return(list(futmat,dmdist))
   
 }
+
+##calc_mantel_microbiome <- function(file_path = file_path, metric = "bray_curtis", mapper_file = mapper_file, mapper_cols = mapper_cols) {
+# 
+#  ## make the micro
+#  dm <- read.table(paste('core-metrics-results-',file_path,'/',metric,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t") %>% mutate(X=as.character(X))
+#  dmdist <- as.dist(dm[,2:dim(dm)[2]])
+#  
+#  ## make the metadata matrix
+#  metadata <- dm %>% 
+#    dplyr::select(X) %>% 
+#    left_join(read.table(mapper_file,comment.char = "", header=T, fill=T, sep="\t"), by=c("X"="X.SampleID")) %>% 
+#    droplevels() 
+#  fut <- as.matrix(metadata %>% dplyr::select(all_of(mapper_cols)))
+#  fut2 <- (fut)
+#  rownames(fut2) <- metadata$X
+#  futmat <- dist(fut2)
+#  cat("dimensions: ")
+#  print(dim(futmat))
+#  
+#  set.seed(43)
+#  mantel1 <- mantel(log10(futmat+1),log10(dmdist+1), method = "spearman", parallel = 7)
+#  print(paste0("rho: ",round(mantel1$statistic,3),"; p: ",mantel1$signif))
+#  # set.seed(43)
+#  # mantel2 <- mantel(dmdist,futmat, method = "spearman", parallel = 7)
+#  # print(paste0("rho: ",round(mantel2$statistic,3),"; p: ",mantel2$signif))
+#  
+#  #if(plot ==T) {
+#  plot(futmat,dmdist)
+#  #}
+#  
+#  return(list(futmat,dmdist))
+#  
+#}
 
 
 # this was the original, i modified the version above to use only the specified mapper cols
@@ -310,6 +355,86 @@ calc_nrel <- function(file_path, month_val, day_val, specify_location) {
     relocate(location)
   return(df1)
 }
+calc_nrel_daylight <- function(file_path, month_val, day_val, specify_location,uncorrected_daylight,atmospheric_corrected_daylight) {
+  df1 <- read.table(file_path, header = T, skip = 2, fill = T, sep = ",") %>%
+    filter(Month == month_val, Day == day_val) %>%
+    dplyr::summarize(MaxTemp = max(Temperature), MinTemp = min(Temperature), AvgTemp = mean(Temperature), 
+                     MaxcDHI = max(Clearsky.DHI), AvgcDHI = mean(Clearsky.DHI), 
+                     MaxcDNI = max(Clearsky.DNI), AvgcDNI = mean(Clearsky.DNI), 
+                     MaxcGHI = max(Clearsky.GHI), AvgcGHI = mean(Clearsky.GHI),  
+                     MaxDP = max(Dew.Point), MinDP = min(Dew.Point), AvgDP = mean(Dew.Point), 
+                     MaxDHI = max(DHI), AvgDHI = mean(DHI), 
+                     MaxcDNI = max(DNI), AvgcDNI = mean(DNI), 
+                     MaxFF = max(Fill.Flag), AvgFF = mean(Fill.Flag), 
+                     MaxcGHI = max(GHI), AvgcGHI = mean(GHI),  
+                     MaxRH = max(Relative.Humidity), MinRH = min(Relative.Humidity), AvgRH = mean(Relative.Humidity), 
+                     MaxSZA = max(Solar.Zenith.Angle), MinSZA = min(Solar.Zenith.Angle), AvgSZA = mean(Solar.Zenith.Angle), 
+                     MaxSA = max(Surface.Albedo), MinSA = min(Surface.Albedo), AvgSA = mean(Surface.Albedo), 
+                     MaxPress = max(Pressure), MinPress = min(Pressure), AvgPres = mean(Pressure), 
+                     MaxPW = max(Precipitable.Water), MinPW = min(Precipitable.Water), AvgPW = mean(Precipitable.Water), 
+                     MaxWD = max(Wind.Direction), MinWD = min(Wind.Direction), AvgWD = mean(Wind.Direction), 
+                     MaxWS = max(Wind.Speed), MinWS = min(Wind.Speed), AvgWS = mean(Wind.Speed), 
+                     MaxUVO = max(Global.Horizontal.UV.Irradiance..280.400nm.), AvgUVO = mean(Global.Horizontal.UV.Irradiance..280.400nm.), 
+                     MaxUVI = max(Global.Horizontal.UV.Irradiance..295.385nm.), AvgUVI = mean(Global.Horizontal.UV.Irradiance..295.385nm.)
+    ) %>%
+    mutate(location = specify_location, uncorrected_daylight = uncorrected_daylight, atmospheric_corrected_daylight = atmospheric_corrected_daylight) %>%
+    relocate(location)
+  return(df1)
+}
+
+calc_nrel <- function(file_path, month_val, day_val, specify_location) {
+  df1 <- read.table(file_path, header = T, skip = 2, fill = T, sep = ",") %>%
+    filter(Month == month_val, Day == day_val) %>%
+    dplyr::summarize(MaxTemp = max(Temperature), MinTemp = min(Temperature), AvgTemp = mean(Temperature), 
+                     MaxcDHI = max(Clearsky.DHI), AvgcDHI = mean(Clearsky.DHI), 
+                     MaxcDNI = max(Clearsky.DNI), AvgcDNI = mean(Clearsky.DNI), 
+                     MaxcGHI = max(Clearsky.GHI), AvgcGHI = mean(Clearsky.GHI),  
+                     MaxDP = max(Dew.Point), MinDP = min(Dew.Point), AvgDP = mean(Dew.Point), 
+                     MaxDHI = max(DHI), AvgDHI = mean(DHI), 
+                     MaxcDNI = max(DNI), AvgcDNI = mean(DNI), 
+                     MaxFF = max(Fill.Flag), AvgFF = mean(Fill.Flag), 
+                     MaxcGHI = max(GHI), AvgcGHI = mean(GHI),  
+                     MaxRH = max(Relative.Humidity), MinRH = min(Relative.Humidity), AvgRH = mean(Relative.Humidity), 
+                     MaxSZA = max(Solar.Zenith.Angle), MinSZA = min(Solar.Zenith.Angle), AvgSZA = mean(Solar.Zenith.Angle), 
+                     MaxSA = max(Surface.Albedo), MinSA = min(Surface.Albedo), AvgSA = mean(Surface.Albedo), 
+                     MaxPress = max(Pressure), MinPress = min(Pressure), AvgPres = mean(Pressure), 
+                     MaxPW = max(Precipitable.Water), MinPW = min(Precipitable.Water), AvgPW = mean(Precipitable.Water), 
+                     MaxWD = max(Wind.Direction), MinWD = min(Wind.Direction), AvgWD = mean(Wind.Direction), 
+                     MaxWS = max(Wind.Speed), MinWS = min(Wind.Speed), AvgWS = mean(Wind.Speed), 
+                     MaxUVO = max(Global.Horizontal.UV.Irradiance..280.400nm.), AvgUVO = mean(Global.Horizontal.UV.Irradiance..280.400nm.), 
+                     MaxUVI = max(Global.Horizontal.UV.Irradiance..295.385nm.), AvgUVI = mean(Global.Horizontal.UV.Irradiance..295.385nm.)
+    ) %>%
+    mutate(location = specify_location) %>%
+    relocate(location)
+  return(df1)
+}
+
+calc_nrel_eu <- function(file_path, month_val, day_val, specify_location) {
+  df1 <- read.table(file_path, header = T, skip = 2, fill = T, sep = ",") %>% filter(Month == month_val, Day == day_val) %>%
+    dplyr::summarize(MaxTemp = max(Temperature), MinTemp = min(Temperature), AvgTemp = mean(Temperature), 
+                      MaxcDHI = max(Clearsky.DHI), AvgcDHI = mean(Clearsky.DHI), 
+                      MaxcDNI = max(Clearsky.DNI), AvgcDNI = mean(Clearsky.DNI), 
+                      MaxcGHI = max(Clearsky.GHI), AvgcGHI = mean(Clearsky.GHI),  
+                      MaxDP = max(Dew.Point), MinDP = min(Dew.Point), AvgDP = mean(Dew.Point), 
+                      MaxDHI = max(DHI), AvgDHI = mean(DHI), 
+                      MaxcDNI = max(DNI), AvgcDNI = mean(DNI), 
+                      MaxFF = max(Fill.Flag), AvgFF = mean(Fill.Flag), 
+                      MaxcGHI = max(GHI), AvgcGHI = mean(GHI),  
+                      MaxRH = max(Relative.Humidity), MinRH = min(Relative.Humidity), AvgRH = mean(Relative.Humidity), 
+                      MaxSZA = max(Solar.Zenith.Angle), MinSZA = min(Solar.Zenith.Angle), AvgSZA = mean(Solar.Zenith.Angle), 
+                      MaxSA = max(Surface.Albedo), MinSA = min(Surface.Albedo), AvgSA = mean(Surface.Albedo), 
+                      MaxPress = max(Pressure), MinPress = min(Pressure), AvgPres = mean(Pressure), 
+                      MaxPW = max(Precipitable.Water), MinPW = min(Precipitable.Water), AvgPW = mean(Precipitable.Water), 
+                      MaxWD = max(Wind.Direction), MinWD = min(Wind.Direction), AvgWD = mean(Wind.Direction), 
+                      MaxWS = max(Wind.Speed), MinWS = min(Wind.Speed), AvgWS = mean(Wind.Speed)
+#                      MaxUVO = max(Global.Horizontal.UV.Irradiance..280.400nm.), AvgUVO = mean(Global.Horizontal.UV.Irradiance..280.400nm.), 
+#                      MaxUVI = max(Global.Horizontal.UV.Irradiance..295.385nm.), AvgUVI = mean(Global.Horizontal.UV.Irradiance..295.385nm.)
+     ) %>%
+     mutate(MaxUVO=0, AvgUVO=0, MaxUVI=0, AvgUVI=0, location = specify_location) %>%
+     relocate(location)
+  return(df1)
+}
+
 calc_nrel_daylight <- function(file_path, month_val, day_val, specify_location,uncorrected_daylight,atmospheric_corrected_daylight) {
   df1 <- read.table(file_path, header = T, skip = 2, fill = T, sep = ",") %>%
     filter(Month == month_val, Day == day_val) %>%
