@@ -3,6 +3,8 @@ title: "Gale 2024 script"
 output: html_document
 ---
 
+# 0.0.1 revisings Sep 2024 
+
 # get started
 ```{r get started}
 
@@ -99,9 +101,34 @@ predefined_colors <- c("green4","green4",
 
 ```
 
+## Figure S8 CFUs
+```{sh}
+# name=conant
+# biom convert -i otu_out_manual_""$name.txt -o cfu_asv_table_$name"".biom --to-hdf5 --table-type="OTU table"
+# qiime tools import --input-path cfu_asv_table_$name"".biom --type 'FeatureTable[Frequency]' --input-format BIOMV210Format --output-path cfu_asv_table_$name"".qza
+# bash ~/Dropbox/sequencing/16sscripts/bray_curtis.sh cfu_asv_table_$name"" conant_test1 2500 cfu_mapper_$name"".tsv "filtercol = 'Y'" 
+
+i=conant_test1
+mkdir $i
+mkdir $i""/bray_curtis_dm_conant_test1
+mkdir $i""/core-metrics-results-conant_test1/
+mkdir $i""/core-metrics-results-conant_test1/bray_curtis_distance_matrix
+wget -O $i""/core-metrics-results-conant_test1/bray_curtis_distance_matrix/distance-matrix.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/conant_test1/core-metrics-results-conant_test1/bray_curtis_distance_matrix/distance-matrix.tsv
+wget -O conant_test1/bray_curtis_dm_conant_test1/distance-matrix.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/conant_test1/bray_curtis_dm_conant_test1/distance-matrix.tsv
+
+
+wget -O cfu_mapper_conant.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/cfu_mapper_conant.tsv
+wget -O otu_out_manual_conant.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/otu_out_manual_conant.txt
+wget -O cfu_data.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/cfu_data.tsv
+pwd
+```
+
+
+
+
 # Figure 1
 ## make the east coast map
-```{r}
+```{r, warning=F, message=F}
 
 ## making plots for the tradeoffs manuscript
 
@@ -155,7 +182,7 @@ ecmap
 ```
 
 ## make the utah map
-```{r}
+```{r, warning=F, message=F}
 east_coast <- subset(map, region %in% c("utah"))
 
 east_coast$group2 <- east_coast$group
@@ -196,7 +223,7 @@ pwd
 ```
 
 ### taxon plot
-```{r}
+```{r, warning=F, message=F}
 setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "redo2009m2"
 mapper_file <- "amber_mapper_7_JMC.tsv"
@@ -241,7 +268,7 @@ amberflies <- base_plot +
   facet_grid(rows = vars(latitude), drop = T, as.table = FALSE, scales = "free", space = "free") + 
   theme(strip.text.y = element_blank(), axis.text.y = element_blank(), legend.position = "none") + 
   coord_flip() + 
-  labs(x = NULL)
+  labs(x = NULL, y = "Fractional abundance")
 
 amberflies+ theme(strip.text.y = element_text(size=10))
 
@@ -265,7 +292,8 @@ pwd
 ```
 
 ### orchard taxon plot
-```{r}
+```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 
 file_path <- "flies_mantel2o2"
 mapper_file <- "henrymapper2_JMC.txt"
@@ -311,7 +339,7 @@ henryorchard <- base_plot +
   facet_grid(rows = vars(latitude), drop = FALSE, as.table = FALSE, scales = "free", space = "free") + 
   theme(strip.text.x = element_blank(), axis.text.y = element_blank(), axis.text.x = element_blank(), strip.text.y = element_blank(), legend.position = "none") + 
   coord_flip() + 
-  labs(x = "Sample") 
+  labs(x = "Sample", y = "Fractional abundance")
 
 henryorchard+ theme(strip.text.y = element_text())
 
@@ -322,7 +350,7 @@ corplot_orchard <- ggplot(orchard_table, aes(x = `k__Bacteria_ p__Proteobacteria
 ```
 
 ### vineyard taxon plot
-```{r}
+```{r, warning=F, message=F}
 file_path <- "flies_mantel2v2"
 mapper_file <- "henrymapper2_JMC.txt"
 map_path = "-henry" # taxonomy folder extension
@@ -368,7 +396,7 @@ vineyard <- base_plot +
   facet_grid(rows = vars(latitude), drop = FALSE, as.table = FALSE, scales = "free", space = "free") + 
   theme(strip.text.x = element_blank(), axis.text.x = element_blank(), axis.text.y = element_blank(), strip.text.y = element_blank(), legend.position = "none") + 
   coord_flip() + 
-  labs(x = "Sample")
+  labs(x = "Sample", y = "Fractional abundance")
 
 vineyard + theme(strip.text.y = element_text())
 
@@ -392,7 +420,7 @@ pwd
 ```
 
 ### taxon plot
-```{r}
+```{r, warning=F, message=F}
 file_path <- "east_coast_overall3"
 mapper_file <- "mapper_1and2.tsv"
 map_path = "-ec1and2" # taxonomy folder extension
@@ -423,15 +451,12 @@ ptp[[1]][1507,c("Count","twovar","site")] = c(0,rep(1,2))
 ptp[[1]][1506,c("Count","twovar","site")] = c(0,rep(2,2))
 ptp[[1]][1505,c("Count","twovar","site")] = c(0,rep(3,2))
 
-factor(ptp[[1]]$site, levels = rev(c("Etna, ME","Bowdoin, ME","Durham, NH","Harvard, MA","Middlefield, CT","1","Media, PA", "Churchville, MD","4","2","3")))
-
 base_plot <- make_taxon_plot_condensed(ptp = ptp, plot_color = plot_color, facet_formula = facet_formula, sort_x_axis = sort_x_axis, x_cluster = x_cluster, plotvarnames = plotvarnames, legend_position = legend_position, read_depth = read_depth, plot_order = plot_order, relevel_col = "site", relevel_vec = rev(c("Etna, ME","Bowdoin, ME","Durham, NH","Harvard, MA","Middlefield, CT","1","Media, PA", "Churchville, MD","4","2","3")), xorder = xorder, default_colors = T, default_order = F, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname, predefined_colors = predefined_colors, order_numbers = order_numbers)
 ec2021 <- base_plot + 
   facet_grid(rows = vars(site), drop = FALSE, as.table = FALSE, scales = "free", space = "free") + 
   theme(strip.text.y = element_blank(), axis.text.y = element_blank(), axis.title.y = element_blank(), legend.position = "none") + 
   coord_flip() + 
-  labs(x = "Sample")
-
+  labs(x = "Sample", y = "Fractional abundance")
 
 ec2021 + theme(strip.text.y = element_text())
 
@@ -455,7 +480,7 @@ pwd
 ```
 
 ### taxon plot
-```{r}
+```{r, warning=F, message=F}
 file_path <- "utah_mantel500S"
 mapper_file <- "mapper_file_JMCv3_edit.tsv"
 map_path = "-utflies2021" # taxonomy folder extension
@@ -483,7 +508,7 @@ ut2020 <- base_plot +
   facet_grid(rows = vars(site), drop = FALSE, as.table = FALSE, scales = "free", space = "free") + 
   theme(strip.text.y = element_blank(), axis.text.y = element_blank(), axis.title.y = element_blank(), legend.position = "none") + 
   coord_flip() + 
-  labs(x = "Sample")
+  labs(x = "Sample", y = "Fractional abundance")
 
 ut2020 + theme(strip.text.y = element_text())
 
@@ -506,107 +531,285 @@ for i in flies_mantel2o2 flies_mantel2v2 redo2009m2 east_coast_overall3 utah_man
 done
 
 wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/Amber_mapper_9.txt
+wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/metadata_2018.txt
+wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/metadata_2009_to_12.txt
+wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/metadata_2021_JMC.txt
+wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/metadata_2020.txt
 pwd
 
 ```
-### script
-```{r}
+
+### just temp
+```{r, warning=F, message=F}
+
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 point_size = 0.1
 ####
 ## henry
 ####
-henryorchard3 <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"bray_curtis") 
+henryorchard3 <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("MaxTemp")),"bray_curtis") 
 henryorchardlat <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("latitude")),"bray_curtis") 
-phenryorchard3 <- mantel_distance_plot(henryorchard3, y_title = "environmental distance", point_size = point_size) + labs(title = bquote(rho~" = 0.13, p = 0.02"))
+phenryorchard3 <- mantel_distance_plot(henryorchard3, y_title = "environmental distance", point_size = point_size) + labs(title = bquote(rho~" = 0.15, p = 0.003"))
 phenryorchardlat <- mantel_distance_plot(henryorchardlat, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = -0.04, p = 0.77"))
 
-henryorchard3_WU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"weighted_unifrac") 
+henryorchard3_WU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("MaxTemp")),"weighted_unifrac") 
 henryorchardlat_WU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("latitude")),"weighted_unifrac") 
-phenryorchard3_WU <- mantel_distance_plot(henryorchard3, y_title = "environmental distance", point_size = point_size) + labs(title = bquote(rho~" = 0.17, p = 0.02"))
+phenryorchard3_WU <- mantel_distance_plot(henryorchard3, y_title = "environmental distance", point_size = point_size) + labs(title = bquote(rho~" = 0.20, p = 0.001"))
 phenryorchardlat_WU <- mantel_distance_plot(henryorchardlat, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.03, p = 0.30"))
-henryorchard3_UU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"unweighted_unifrac") 
+henryorchard3_UU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("MaxTemp")),"unweighted_unifrac") 
 henryorchardlat_UU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = list(c("latitude")),"unweighted_unifrac") 
-phenryorchard3_UU <- mantel_distance_plot(henryorchard3, y_title = "environmental distance", point_size = point_size) + labs(title = bquote(rho~" = 0.07, p = 0.10"))
+phenryorchard3_UU <- mantel_distance_plot(henryorchard3, y_title = "environmental distance", point_size = point_size) + labs(title = bquote(rho~" = 0.11, p = 0.01"))
 phenryorchardlat_UU <- mantel_distance_plot(henryorchardlat, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.13, p = 0.006"))
 
 # sig sig not
-henryv3 <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"bray_curtis") 
+henryv3 <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("MaxTemp")),"bray_curtis") 
 henryvlat <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("latitude")),"bray_curtis") 
-phenryv3 <- mantel_distance_plot(henryv3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.32, p = 0.001"))
+phenryv3 <- mantel_distance_plot(henryv3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.10, p = 0.002"))
 phenryvlat <- mantel_distance_plot(henryvlat, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = -0.01, p = 0.56"))
 
-henryv3_WU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"weighted_unifrac") 
+henryv3_WU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("MaxTemp")),"weighted_unifrac") 
 henryvlat_WU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("latitude")),"weighted_unifrac") 
-phenryv3_WU <- mantel_distance_plot(henryv3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.21, p = 0.001"))
+phenryv3_WU <- mantel_distance_plot(henryv3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.09, p = 0.008"))
 phenryvlat_WU <- mantel_distance_plot(henryvlat, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = -0.01, p = 0.59"))
-henryv3_UU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"unweighted_unifrac") 
+henryv3_UU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("MaxTemp")),"unweighted_unifrac") 
 henryvlat_UU <- mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = list(c("latitude")),"unweighted_unifrac") 
-phenryv3_UU <- mantel_distance_plot(henryv3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.23, p = 0.001"))
+phenryv3_UU <- mantel_distance_plot(henryv3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.24, p = 0.001"))
 phenryvlat_UU <- mantel_distance_plot(henryvlat, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.03, p = 0.20"))
 
 ####
 ## amber
 ####
-amber3 <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"bray_curtis") 
+amber3 <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("MaxTemp")),"bray_curtis") 
 amberlat <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("latitude")),"bray_curtis") 
-pamber3 <- mantel_distance_plot(amber3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.28, p = 0.007"))
+pamber3 <- mantel_distance_plot(amber3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.15, p = 0.04"))
 pamberlat <- mantel_distance_plot(amberlat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.31, p = 0.004"))
 
-amber3_WU <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"weighted_unifrac") 
+amber3_WU <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("MaxTemp")),"weighted_unifrac") 
 amberlat_WU <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("latitude")),"weighted_unifrac") 
-pamber3_WU <- mantel_distance_plot(amber3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.16, p = 0.07"))
+pamber3_WU <- mantel_distance_plot(amber3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.10, p = 0.11"))
 pamberlat_WU <- mantel_distance_plot(amberlat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.45, p = 0.003"))
-amber3_UU <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("MinRH","latitude","MaxTemp")),"unweighted_unifrac") 
+amber3_UU <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("MaxTemp")),"unweighted_unifrac") 
 amberlat_UU <- mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = list(c("latitude")),"unweighted_unifrac") 
-pamber3_UU <- mantel_distance_plot(amber3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.11, p = 0.21"))
+pamber3_UU <- mantel_distance_plot(amber3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.03, p = 0.33"))
 pamberlat_UU <- mantel_distance_plot(amberlat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = -0.03, p = 0.57"))
 
 ####
 ## EC - all sig
 ####
 ## basically sig all
-ec213 <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("MinRH","latitude","MaxTemp")),"bray_curtis")
+ec213 <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("MaxTemp")),"bray_curtis")
 ec21lat <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("latitude")),"bray_curtis")
-pec213 <- mantel_distance_plot(ec213, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.21, p = 0.001"))
+pec213 <- mantel_distance_plot(ec213, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.20, p = 0.001"))
 pec21lat <- mantel_distance_plot(ec21lat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.35, p = 0.001"))
 
-ec213_WU <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("MinRH","latitude","MaxTemp")),"weighted_unifrac")
+ec213_WU <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("MaxTemp")),"weighted_unifrac")
 ec21lat_WU <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("latitude")),"weighted_unifrac")
-pec213_WU <- mantel_distance_plot(ec213, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.13, p = 0.01"))
+pec213_WU <- mantel_distance_plot(ec213, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.16, p = 0.003"))
 pec21lat_WU <- mantel_distance_plot(ec21lat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.38, p = 0.001"))
-ec213_UU <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("MinRH","latitude","MaxTemp")),"unweighted_unifrac")
+ec213_UU <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("MaxTemp")),"unweighted_unifrac")
 ec21lat_UU <- mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt",list(c("latitude")),"unweighted_unifrac")
-pec213_UU <- mantel_distance_plot(ec213, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.10, p = 0.04"))
+pec213_UU <- mantel_distance_plot(ec213, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.07, p = 0.10"))
 pec21lat_UU <- mantel_distance_plot(ec21lat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.10, p = 0.10"))
 
 ####
 ## Utah
 ####
-utah3 <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("MinRH","latitude","MaxTemp")), "bray_curtis")
-utah3b <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude","MaxTemp")), "bray_curtis")
+utah3 <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("MaxTemp")), "bray_curtis")
+#utah3b <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude","MaxTemp")), "bray_curtis")
 utahlat <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude")), "bray_curtis")
-putah3 <- mantel_distance_plot(utah3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.13, p = 0.06"))
-putah3b <- mantel_distance_plot(utah3b, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.21, p = 0.001"))
+putah3 <- mantel_distance_plot(utah3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.17, p = 0.007"))
+#putah3b <- mantel_distance_plot(utah3b, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.21, p = 0.001"))
 putahlat <- mantel_distance_plot(utahlat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.21, p = 0.02"))
 
-utah3_WU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("MinRH","latitude","MaxTemp")), "weighted_unifrac")
-utah3b_WU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude","MaxTemp")), "weighted_unifrac")
+utah3_WU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("MaxTemp")), "weighted_unifrac")
+#utah3b_WU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude","MaxTemp")), "weighted_unifrac")
 utahlat_WU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude")), "weighted_unifrac")
-putah3_WU <- mantel_distance_plot(utah3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.05, p = 0.21"))
-putah3b_WU <- mantel_distance_plot(utah3b, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.13, p = 0.03"))
+putah3_WU <- mantel_distance_plot(utah3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.09, p = 0.10"))
+#putah3b_WU <- mantel_distance_plot(utah3b, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.13, p = 0.03"))
 putahlat_WU <- mantel_distance_plot(utahlat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = 0.16, p = 0.047"))
-utah3_UU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("MinRH","latitude","MaxTemp")), "unweighted_unifrac")
-utah3b_UU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude","MaxTemp")), "unweighted_unifrac")
+utah3_UU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("MaxTemp")), "unweighted_unifrac")
+#utah3b_UU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude","MaxTemp")), "unweighted_unifrac")
 utahlat_UU <- mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", list(c("latitude")), "unweighted_unifrac")
-putah3_UU <- mantel_distance_plot(utah3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = -0.03, p = 0.63"))
-putah3b_UU <- mantel_distance_plot(utah3b, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.04, p = 0.27"))
+putah3_UU <- mantel_distance_plot(utah3, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.08, p = 0.12"))
+#putah3b_UU <- mantel_distance_plot(utah3b, y_title = "environmental distance", point_size = point_size)+ labs(title = bquote(rho~" = 0.04, p = 0.27"))
 putahlat_UU <- mantel_distance_plot(utahlat, y_title = "environmental distance (latitude)", point_size = point_size)+ labs(title = bquote(rho~" = -0.08, p = 0.73"))
 
 
 ```
 
+## DEST additions
+```{sh, eval=F}
+pwd
+mkdir core-metrics-results-desteuropea
+mkdir core-metrics-results-desteuropea/bray_curtis_distance_matrix
+wget -O core-metrics-results-desteuropea/rarefied_table.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-desteuropea/rarefied_table.txt
+wget -O core-metrics-results-desteuropea/bray_curtis_distance_matrix/distance-matrix.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-desteuropea/bray_curtis_distance_matrix/distance-matrix.tsv
+mkdir core-metrics-results-destusa
+mkdir core-metrics-results-destusa/bray_curtis_distance_matrix
+wget -O core-metrics-results-destusa/rarefied_table.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-destusa/rarefied_table.txt
+wget -O core-metrics-results-destusa/bray_curtis_distance_matrix/distance-matrix.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-destusa/bray_curtis_distance_matrix/distance-matrix.tsv
+wget -O DESTEuropeMetadata.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTEuropeMetadata.txt
+wget -O DESTUsaMetadata.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTUsaMetadata.txt
+wget -O DESTUsaMetadata.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTUsaMetadata.txt
+wget -O DESTmapper_v3.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTmapper_v3.txt
+wget -O DESTmapper_v3b.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTmapper_v3b.txt
+mkdir taxonomy-DEST
+wget -O taxonomy-DEST/taxonomy_forR.csv https://raw.githubusercontent.com/johnchaston/Gale2024/main/taxonomy-DEST/taxonomy_forR.csv
+
+```
+
+### Europe and USA Mantel tests
+```{r, warning=F, message=F}
+## test each individual (table S3)
+
+# j= "desteuropea"; mapper_file = "DESTEuropeMetadata.txt"
+# for (i in c("Latitude","CollectionDate","MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+#     DESTmantel <- calc_mantel_microbiome(j,"bray_curtis",mapper_file,c(i), filter = T)
+# }
+# 
+# j= "destusa"; mapper_file = "DESTUsaMetadata.txt"
+# for (i in c("Latitude","CollectionDate","MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+#     DESTmantel <- calc_mantel_microbiome(j,"bray_curtis",mapper_file,c(i), filter = F)
+# }
+
+## make figures based on Temperature and Latitude
+usalat <- calc_mantel_microbiome("destusa","bray_curtis","DESTUsaMetadata.txt",c("Latitude"))
+usatemp <- calc_mantel_microbiome("destusa","bray_curtis","DESTUsaMetadata.txt",c("MaxTemp"))
+usalatplot <- mantel_distance_plot(usalat, y_title = "Microbiota distance", x_title = "Env. distance\n(latitude (°)", point_size = 0.1) + labs(title = bquote(rho~" = 0.01, p = 0.39"))
+usatempplot <- mantel_distance_plot(usatemp, y_title = "Microbiota distance", x_title = "Env. distance\n(temperature (°C))", point_size = 0.1) + labs(title = bquote(rho~" = 0.11, p = 0.02"))
+
+europelat <- calc_mantel_microbiome("desteuropea","bray_curtis","DESTEuropeMetadata.txt",c("Latitude"), filter = T)
+europetemp <- calc_mantel_microbiome("desteuropea","bray_curtis","DESTEuropeMetadata.txt",c("MaxTemp"), filter = T)
+europelatplot <- mantel_distance_plot(europelat, y_title = "Microbiota distance", x_title = "Env. distance\n(latitude (°)", point_size = 0.1) + labs(title = bquote(rho~" = 0.16, p = 0.001"))
+europetempplot <- mantel_distance_plot(europetemp, y_title = "Microbiota distance", x_title = "Env. distance\n(temperature (°C))", point_size = 0.1) + labs(title = bquote(rho~" = 0.13, p = 0.004"))
+```
+
+## europe and usa map
+```{r, warning=F, message=F}
+mapper3b <- readr::read_tsv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTmapper_v3b.txt", show_col_types = F, comment = "") %>% dplyr::rename(X.SampleID=`#SampleID`)
+
+map2 <- map_data("world")
+map2sub <- map2 %>% filter(region %in% c(mapper3b$Country,"UK"), !region %in% c("USA","Canada", "Guadeloupe"))
+map2sub$group2 <- map2sub$group
+map2sub$color <- "white"
+
+europemap <- ggplot() + 
+  geom_polygon(data=map2sub %>% filter(lat < 70, long <45) %>% droplevels(), aes(x=long, y=lat, group=group2), color="grey",fill="white") + 
+  coord_fixed(1.3) + 
+  theme_void() +
+  geom_point(data = mapper3b %>% filter(!Country%in% c("USA","Canada", "Guadeloupe")) %>% filter(X.SampleID %in% colnames(readr::read_tsv('https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-desteuropea/rarefied_table.txt', show_col_types = F, skip = 1))[-1]), aes(y=Latitude, x=Longitude), size = 2.5, color = "black") 
+
+map2sub <- map2 %>% filter(region %in% c("USA","Canada"))
+map2sub$group2 <- map2sub$group
+map2sub$color <- "white"
+
+usamap <- ggplot() + 
+  geom_polygon(data=map2sub %>% filter(lat < 50, long > -130) %>% droplevels(), aes(x=long, y=lat, group=group2), color="grey",fill="white") + 
+  coord_fixed(1.3) + 
+  theme_void() +
+  geom_point(data = mapper3b %>% filter(Country%in% c("USA","Canada")) %>% filter(X.SampleID %in% colnames(readr::read_tsv('https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-destusa/rarefied_table.txt', show_col_types = F, skip = 1))[-1]), aes(y=Latitude, x=Longitude), size = 2.5, color = "black") 
+usamap
+
+
+```
+
+## Europe taxon plot
+```{r, warning=F, message=F}
+
+file_path = "desteuropea"
+map_path = "-DEST" # taxonomy folder extension
+plotvarnames = c("LocalityID", "Country") 
+mapper_file = "DESTmapper_v3.txt" 
+taxonomic_level="genus"
+rpa_in_chart = .02
+read_depth = 500
+legend_position = "bottom"
+sort_x_axis = "City"
+x_cluster = "X.SampleID" #
+
+ptp <- prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster)
+
+x_cluster <- "LocalityID"
+plot_color <- c("black","green1","blue","yellow","orange","magenta","red")
+plot_order <- c("Gammaproteobacteriaunclassified","Lactobacillus","Commensalibacter","Gluconobacter","Komagataeibacter","Acetobacter")
+facet_formula <- ". ~ Country"
+sort_x_axis <- "LocalityID"
+legend_position = "bottom"
+
+base_plot <- make_taxon_plot_condensed(ptp = ptp, plot_color = plot_color, facet_formula = facet_formula, sort_x_axis = sort_x_axis, x_cluster = x_cluster, plotvarnames = plotvarnames, legend_position = legend_position, read_depth = read_depth, plot_order = plot_order, xorder = "LocalityID")
+europe_plot <- base_plot + 
+  facet_grid(cols = vars(Country), drop = FALSE, as.table = FALSE, scales = "free", space = "free") +
+  theme(strip.text.x = element_text(angle = 90, hjust=0), axis.text.x = element_blank(), strip.text.y = element_text(angle = 0), strip.background.x = element_rect(fill = "white"), legend.position = "none", axis.title = element_text(face = "bold")) + 
+  labs(x = "Location") 
+europe_plot
+```
+
+## USA
+```{r, warning=F, message=F}
+file_path <- "destusa"
+map_path = "-DEST" # taxonomy folder extension
+plotvarnames = c("State","LocalityID") 
+mapper_file = "DESTmapper_v3b.txt"
+taxonomic_level="genus"
+rpa_in_chart = .02
+read_depth = 500
+legend_position = "bottom"
+sort_x_axis = "State"
+x_cluster = "X.SampleID" #
+
+ptp <- prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster)
+
+x_cluster <- "LocalityID"
+plot_color <- c("black","black","green1","green1","purple1","blue","yellow","orange","magenta","red")
+plot_order <- c("Saccharomyces","Providencia","Gammaproteobacteriaunclassified","Leuconostoc","Lactobacillus","Commensalibacter","Gluconobacter","Komagataeibacter","Acetobacter")
+facet_formula <- ". ~ State"
+sort_x_axis <- "LocalityID"
+legend_position = "bottom"
+
+base_plot <- make_taxon_plot_condensed(ptp = ptp, plot_color = plot_color, facet_formula = facet_formula, sort_x_axis = sort_x_axis, x_cluster = x_cluster, plotvarnames = plotvarnames, legend_position = legend_position, read_depth = read_depth, plot_order = plot_order, xorder = "LocalityID")
+usa_plot <- base_plot + 
+  facet_grid(cols = vars(State), drop = FALSE, as.table = FALSE, scales = "free", space = "free") +
+  theme(strip.text.x = element_text(angle = 90, hjust=0), axis.text.x = element_blank(), strip.text.y = element_text(angle = 0), strip.background.x = element_rect(fill = "white"), legend.position = "none", axis.title = element_text(face = "bold")) + 
+  labs(x = "Location") 
+usa_plot
+
+```
+
+
+## Table S3
+```{r, warning=F, message=F, eval = F}
+
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
+point_size = 0.1
+####
+## henry
+####
+
+for(i in c("MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+  mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2o2", "metadata_2018.txt", cols_to_test = i,"bray_curtis") 
+}
+
+for(i in c("MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+  mantel_EC18("henrymapper2_JMC.txt", "flies_mantel2v2", "metadata_2018.txt", cols_to_test = i,"bray_curtis") 
+}
+
+for(i in c("MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+  mantel_EC18("Amber_mapper_9.txt", "redo2009m2", "metadata_2009_to_12.txt", cols_to_test = i,"bray_curtis") 
+}
+
+for(i in c("MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+  mantel_EC21seq("mapper_1and2.tsv","east_coast_overall3","metadata_2021_JMC.txt", cols_to_test = i,"bray_curtis") 
+}
+
+for(i in c("MaxTemp","MinTemp","AvgTemp","MaxcDHI","AvgcDHI","MaxcDNI","AvgcDNI","MaxcGHI","AvgcGHI","MaxDP","MinDP","AvgDP","MaxDHI","AvgDHI","MaxFF","AvgFF","MaxRH","MinRH","AvgRH","MaxSZA","MinSZA","AvgSZA","MaxSA","MinSA","AvgSA","MaxPress","MinPress","AvgPres","MaxPW","MinPW","AvgPW","MaxWD","MinWD","AvgWD","MaxWS","MinWS","AvgWS","MaxUVO","AvgUVO","MaxUVI","AvgUVI")) {
+  mantel_UT20("mapper_file_JMCv3_edit.tsv", "utah_mantel500S", "metadata_2020.txt", cols_to_test = i,"bray_curtis") 
+}
+
+
+```
+
 ## Temperature
-```{r}
+```{r, warning=F, message=F}
 temp_data <- readr::read_tsv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/readin5_temperature.txt", show_col_types = F) %>%
   dplyr::select(-experiment, sample_type) %>%
   mutate(Genotype = as.factor(Genotype),
@@ -617,7 +820,7 @@ temp_data <- readr::read_tsv(file = "https://raw.githubusercontent.com/johnchast
          exp = as.factor(exp)
   )
 
-temp_relative <- make_chart_stats_96_bar_jitter_violin(bac = temp_data, column = "Treatment", plotout = 2, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Temperature (°C)", y = "fractional abundance") +
+temp_relative <- make_chart_stats_96_bar_jitter_violin(bac = temp_data, column = "Treatment", plotout = 2, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Temperature (°C)", y = "Fractional abundance") +
   theme(legend.position = "none") +
   scale_x_discrete(labels = (c("15","25","32"))) 
 
@@ -808,7 +1011,7 @@ vegan::adonis2(formula = as.formula(paste0("flies_prerarefied_dm ", formula)), d
 ```
 
 ## Photoperiod
-```{r}
+```{r, warning=F, message=F}
 
 phot_data <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/readin5_photoperiod.csv", show_col_types = F) %>% 
  dplyr::select(-`...1`, experiment, sample_type) %>%
@@ -819,7 +1022,7 @@ phot_data <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchast
          exp = as.factor(exp)
   )
 
-photoperiod_relative <- make_chart_stats_96_bar_jitter_violin(bac = phot_data, column = "Treatment", plotout = 2, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Light:dark cycle (h)", y = "fractional abundance") +
+photoperiod_relative <- make_chart_stats_96_bar_jitter_violin(bac = phot_data, column = "Treatment", plotout = 2, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Light:dark cycle (h)", y = "Fractional abundance") +
   theme(legend.position = "none") + 
   scale_x_discrete(labels = (c("1:23","12:12", "23:1"))) 
 
@@ -890,31 +1093,35 @@ grid.arrange(photoplotabun_A_M + labs(tag="A"),
              )
 )
 #dev.off()
+getwd()
+
 
 i=1.3
-#jpeg(h=9*i, w=6*i*2, "photoperiod_figureS.jpg", units = "in", res=300)
-grid.arrange(photoplot_A_M + labs(tag="A"),
-             photoplot_A_F + labs(tag="B"),
-             photoplot_B_M + labs(tag="C"),
-             photoplot_B_F + labs(tag="D"),
-             photoplot_C_M + labs(tag="E"),
-             photoplot_C_F + labs(tag="F"),
-             photoplotabun_A_M + labs(tag="G"),
-             photoplotabun_A_F + labs(tag="H"),
-             photoplotabun_B_M + labs(tag="I"),
-             photoplotabun_B_F + labs(tag="J"),
-             photoplotabun_C_M + labs(tag="K"),
-             photoplotabun_C_F + labs(tag="L"),
+jpeg(h=12*i, w=6*i*2, "photoperiod_figureSephi.jpg", units = "in", res=300)
+grid.arrange(photoplot_A_M + labs(tag="C"),
+             photoplot_A_F + labs(tag="D"),
+             photoplot_B_M + labs(tag="E"),
+             photoplot_B_F + labs(tag="F"),
+             photoplot_C_M + labs(tag="G"),
+             photoplot_C_F + labs(tag="H"),
+             photoplotabun_A_M + labs(tag="I"),
+             photoplotabun_A_F + labs(tag="J"),
+             photoplotabun_B_M + labs(tag="K"),
+             photoplotabun_B_F + labs(tag="L"),
+             photoplotabun_C_M + labs(tag="M"),
+             photoplotabun_C_F + labs(tag="N"),
+             photoperiod_relative + labs(tag="A"),
+             photoperiod_abundance + labs(tag="B"),
              widths = c(1,1,1,1),
-             heights = c(1,1,1),
+             heights = c(1,1,1,1),
              layout_matrix=rbind(		
+                c(13,14,NA,NA),
                 c(1,2,7,8),
                 c(3,4,9,10),
                 c(5,6,11,12)
                 )
 )
-#dev.off()
-
+dev.off()
 ```
 
 ## Table S4 bottom
@@ -1020,7 +1227,7 @@ bc_analysis("phot24m", paste0("cfu_mapper_",filename,".tsv"), "~ Genotype * Trea
 ```
 
 ## Overall figure
-```{r}
+```{r, warning=F, message=F}
 #points_data <- read_xlsx('~/Dropbox/east_coast_flies_manuscript/megamap_latlong.xlsx', sheet = "Sheet7")
 points_data <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/megamap_latlong_sheet7.csv", show_col_types = F) 
 
@@ -1032,13 +1239,15 @@ ec21points <- ggplot(points_data %>% filter(plot=="ec"), aes(x = column, y = row
 plot_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(nrow=6,byrow=TRUE)))
 
 plot_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=3,byrow=F)) + scale_fill_manual(name = "", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
+plot_legend_ec <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12)) + guides(fill=guide_legend(ncol=5,byrow=F)) + scale_fill_manual(name = "           ", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
 plot_legend_ec <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12)) + guides(fill=guide_legend(ncol=2,byrow=F)) + scale_fill_manual(name = "           ", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
+
 
 plot(plot_legend_ec)
 fig1tagsize=25
 mantel_size = 12
 
-#jpeg(h=8*.875*1.5*1.3*.9, w=28*.875*.75*.9, "~/Dropbox/east_coast_flies_manuscript/Figure1_aug2024b.jpg", units = "in", res=300)
+#jpeg(h=20, w=16, "~/Dropbox/east_coast_flies_manuscript/Figure1_oct2024.jpg", units = "in", res=300)
 grid.arrange(ecmap + labs(tag = "A") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)), 
              amberpoints + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.title.y = element_blank(), axis.text = element_blank(), axis.line = element_line(color = "white"), axis.text.x = element_text(size = 12, angle = 90, color = "white"), axis.ticks = element_line(color = "white"), axis.title.x = element_text(color = "white"), axis.line.y = element_blank(), axis.ticks.y = element_blank()) + labs(tag = "B", y = " ")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
              amberflies + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90)),
@@ -1048,52 +1257,61 @@ grid.arrange(ecmap + labs(tag = "A") + theme(plot.tag = element_text(face = "bol
              henryorchard+ theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90), axis.title.y = element_blank()),
              ec21points + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.title.y = element_blank(), axis.text = element_blank(), axis.line = element_line(color = "white"), axis.text.x = element_text(size = 12, angle = 90, color = "white"), axis.ticks = element_line(color = "white"), axis.title.x = element_text(color = "white"), axis.line.y = element_blank(), axis.ticks.y = element_blank()) + labs(tag = "E", y = " ")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
              ec2021+ theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90)),
-             pamberlat + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "F")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),   
-             pamber3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "J")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             phenryvlat+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "G")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryv3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "K")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             phenryorchardlat+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "H")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryorchard3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "L")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             pec21lat+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "I")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             pec213+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "M")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pamberlat + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "F")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pamber3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "J") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             phenryvlat+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "G")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryv3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "K")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             phenryorchardlat+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude(°))", y = "Microbiota distance", tag = "H")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryorchard3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "L")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pec21lat+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "I")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pec213+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "M")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
              plot_legend_ec,
-             temp_relative + labs(tag="N") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
-             temp_absolute + labs(tag="O") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
-             photoperiod_relative + labs(tag="P") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
-             photoperiod_abundance + labs(tag="Q") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             temp_relative + labs(tag="V") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             temp_absolute + labs(tag="W") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             usa_plot + labs(tag="P") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)) + theme(strip.text.x = element_text(size = 8)),
+             europe_plot+ labs(tag="Q") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)) + theme(strip.text.x = element_text(size = 8)),
+            usamap+ labs(tag="N") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+            europemap+ labs(tag="O") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             usalatplot+ labs(tag="R") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             usatempplot + theme(plot.title = element_text(color = "blue"))+ labs(tag="S") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             europelatplot + theme(plot.title = element_text(color = "blue"))+ labs(tag="T") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             europetempplot + theme(plot.title = element_text(color = "blue"))+ labs(tag="U") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
             layout_matrix=rbind(		
-                c(1,1,2,3,4,5,6,7,7,8,9),
-                c(1,1,10,10,12,12,14,14,14,16,16),
-                c(18,18,10,10,12,12,14,14,14,16,16),
-                c(18,18,11,11,13,13,15,15,15,17,17),
-                c(19,20,20,20,20,21,21,21,22,22,22)
+                c(1, 1, 1, 1, 2, 3, 3, 4, 5, 5, 6, 7, 7, 8, 9),
+#                c(1,1,1,18,18,18,18,18,18,18,18,18),
+                c(1, 1, 1, 1, 10,10,10,12,12,12,14,14,14,16,16),
+                c(18,18,18,18,10,10,10,12,12,12,14,14,14,16,16),
+                c(18,18,18,18,11,11,11,13,13,13,15,15,15,17,17),
+                c(23,23,23,23,23,23,24,24,24,24,24,24,19,19,19),
+                c(21,21,21,21,22,22,22,22,22,22,22,22,19,19,19),
+                c(21,21,21,21,22,22,22,22,22,22,22,22,20,20,20),
+                c(25,25,26,26,26,26,27,27,27,28,28,28,20,20,20)
              ),
-             widths = c(.4625,.09,.07,.25,.07,.25,.09,.1225,.25-.1225,.07,.25),
-             heights = c(2,.65,.65,1.3,2)
+             widths = c(.2765,.07355,.11265,.09,.07,.077,.173,.07,.11,.14,.09,.1225,.25-.1225,.07,.25),
+             heights = c(2,.65,.65,1.3,2,.65,1.35,1.3)
 )
 #dev.off()
-
 ```
 
-## Figure SX - UU and WU mantel results
-```{r}
-#jpeg(h=8*.875*1.5, w=28*.875*.75, "~/Dropbox/east_coast_flies_manuscript/Figure1_july2024b_supp.jpg", units = "in", res=300)
-grid.arrange(pamberlat_WU + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "A")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),   
-             pamber3_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "E")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryvlat_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "B")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryv3_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "F")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             phenryorchardlat_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "C")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryorchard3_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "G")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             pec21lat_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "D")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             pec213_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "H")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             pamberlat_UU + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "I")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),   
-             pamber3_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "M")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryvlat_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "J")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             phenryv3_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "N")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             phenryorchardlat_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "K")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-             phenryorchard3_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "O")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             pec21lat_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "Microbiota distance", tag = "L")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
-             pec213_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "Microbiota distance", tag = "P")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+## Figure S2 - UU and WU mantel results
+```{r, warning=F, message=F}
+#jpeg(h=8*.875*1.5, w=28*.875*.75, "~/Dropbox/east_coast_flies_manuscript/Figure1_sep2024c_supp.jpg", units = "in", res=300)
+grid.arrange(pamberlat_WU + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "A")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),   
+             pamber3_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "E")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryvlat_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "B")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryv3_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "F")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             phenryorchardlat_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "C")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryorchard3_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "G")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pec21lat_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "D")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pec213_WU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "H")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pamberlat_UU + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "I")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),   
+             pamber3_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "M")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryvlat_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "J")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             phenryv3_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "N")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             phenryorchardlat_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "K")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             phenryorchard3_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "O")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+             pec21lat_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "L")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
+             pec213_UU+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "Microbiota distance", tag = "P")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "black", size = mantel_size * 1.15)),
             layout_matrix=rbind(
               c(1,3,5,7),
               c(2,4,6,8),
@@ -1107,34 +1325,32 @@ grid.arrange(pamberlat_WU + theme(text = element_text(size=mantel_size*1.15), ax
 
 ```
 
-## Figure SX - Utah flies figure
-```{r}
-plot_ut_legend <- g_legend(ut2020 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=3,byrow=TRUE)))
+## Figure S1 - Utah flies figure
+```{r, warning=F, message=F}
+plot_ut_legend <- g_legend(ut2020 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=5,byrow=TRUE)))
 plot(plot_ut_legend)
 utpoints <- ggplot(points_data %>% filter(plot=="utah"), aes(x = column, y = row, shape = symbol)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(3.8,8.3))
 
-#jpeg(h=8*.875, w=28*.875*.75*.75, "~/Dropbox/east_coast_flies_manuscript/FigureSX_utah_july2024.jpg", units = "in", res=300)
+ #  jpeg(h=9, w=9, "~/Dropbox/east_coast_flies_manuscript/FigureSX_utah_sep2024.jpg", units = "in", res=300)
    grid.arrange(utmap + labs(tag = "A")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
                 utpoints + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.title.y = element_blank(), axis.text = element_blank(), axis.line = element_line(color = "white"), axis.text.x = element_text(size = 12, angle = 90, color = "white"), axis.ticks = element_line(color = "white"), axis.title.x = element_text(color = "white"), axis.line.y = element_blank(), axis.ticks.y = element_blank()) + labs(tag = "B", y = " ")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
-                putahlat + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude)", y = "microbiota distance", tag = "C")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-                putah3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp., hum.)", y = "microbiota distance", tag = "E")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+                putahlat + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "microbiota distance", tag = "C")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
+                putah3+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (temperature (°C))", y = "microbiota distance", tag = "D")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
                 ut2020 + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90)),
                 plot_ut_legend,
-                putah3b+ theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (lat., temp.)", y = "microbiota distance", tag = "D")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),
-
                layout_matrix=rbind(		
-                c(1,2,5,7),
-                c(1,3,3,4),
-                c(6,3,3,4)
+                c(1,2,5),
+                c(6,6,6),
+                c(3,4,4)
              ),
-             widths = c(.3,.07,.18,.25),
-             heights = c(1.5,.5,1)
+             widths = c(.25,.07,.18),
+             heights = c(1.5,.7,1.5)
    )
 #dev.off()
 ```
 
-## Figure SX - correlations figure
-```{r}
+## Figure S5 - correlations figure
+```{r, warning=F, message=F}
 annotationsize = 2
 cortest_amber
 
@@ -1160,7 +1376,7 @@ cortest_amber
 
 # Figure 2
 ## Determine which samples go with each other
-```{r}
+```{r, warning=F, message=F}
 #reference_table <- read.table('~/Dropbox/sequencing/2022-08-ECrun1and2/mapper_1and2_WendyJMC.tsv', fill = T, sep = "\t", comment.char = "", header=T) %>% filter(totalreads_noW > 500, numericsubsite!="<NA>")
 reference_table <- readr::read_tsv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/mapper_1and2_WendyJMC.tsv",skip = 0) %>% filter(totalreads_noW > 500, numericsubsite!="<NA>")
 ```
@@ -1241,7 +1457,7 @@ pwd
 
 
 ## Mantel tests
-```{r}
+```{r, warning=F, message=F}
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 mantel_2groups_all3("mantel_starved_fruit_S","mantel_starved_fruit_F",mapper_file) # nonew
 mantel_2groups_all3("mantel_starved_unstarved_S","mantel_starved_unstarved_U",mapper_file) # UW = 0.046
@@ -1252,7 +1468,7 @@ mantel_2groups_all3("mantel_fruit_soil_F","mantel_fruit_soil_S",mapper_file) # n
 ```
 
 ## ancom
-```{r}
+```{r, warning=F, message=F}
 taxonomic_level = "X.OTU.ID"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 map_path <- "-ec1and2"
@@ -1364,7 +1580,7 @@ tabulate_individual_venns <- function(file_path = file_path, taxonomic_level = t
 ```
 
 ## Venn diagrams
-```{r}
+```{r, warning=F, message=F}
 map_path = "-ec1and2"
 otu_table = reference_table
 var1 = "plotorder"
@@ -1419,7 +1635,7 @@ wilcox.test(venns_starved_fruit2 %>% pull(perc2), venns_unstarved_fruit2 %>% pul
 ```
 
 ### Venn diagram table
-```{r}
+```{r, warning=F, message=F}
 all_starved_asvs <- get_single_core_features(file_path = "mantel_starved_fruit_S", map_path = map_path, mapper_file = mapper_file, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, taxonomic_level = "X.OTU.ID") %>%
   mutate(sum = rowSums(across(where(is.numeric)))) %>%
   dplyr::select(clustered_taxonomy, sum)
@@ -1515,7 +1731,7 @@ s2 %>% filter(inFly > 175 | inFruit > 175)
 ```
 
 ## neutral analysis
-```{r}
+```{r, warning=F, message=F}
 taxmat = read.csv('taxonomy-ec1and2/taxonomy_forR.csv')
 rownames(taxmat) <- taxmat$Feature.ID
 taxmat <- taxmat %>% dplyr::select(-Feature.ID)
@@ -1566,7 +1782,7 @@ neutral_plot
 ```
 
 ## map
-```{r}
+```{r, warning=F, message=F}
 east_coast <- subset(map, region %in% c("maine","connecticut","massachusetts","new hampshire","rhode island","vermont","pennsylvania","maryland","district of columbia","delaware","new jersey","new york","virginia"))
 
 east_coast$group2 <- east_coast$group
@@ -1590,7 +1806,7 @@ fruit_map
 ```
 
 ## permanova table
-```{r}
+```{r, warning=F, message=F}
 file_path = "4wayTaxon"
 
   ## unweighted
@@ -1608,7 +1824,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 ```
 
 ## taxon plots
-```{r}
+```{r, warning=F, message=F}
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 map_path <- "-ec1and2"
 
@@ -1656,7 +1872,7 @@ taxon_legend <- g_legend(quartet_taxon_plot + theme(legend.position = "bottom")+
 ```
 
 ## distance analysis
-```{r}
+```{r, warning=F, message=F}
 file_path = "4wayTaxon"
 folder_path = "weighted_unifrac"
 var1 = "plotorder"
@@ -1775,7 +1991,7 @@ pwd
 ```
 
 ## Table S7 PERMANOVA
-```{r}
+```{r, warning=F, message=F}
 file_path <- "pile_flies"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 
@@ -1792,7 +2008,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 ```
 
 ## taxon plots
-```{r}
+```{r, warning=F, message=F}
 file_path <- "pile_flies"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 
@@ -1829,7 +2045,7 @@ compost_plot <- make_taxon_plot_condensed(ptp = ptp, plot_color = plot_color, so
 ```
 
 ## ancom
-```{r}
+```{r, warning=F, message=F}
 
 rm(melted_table, melted_table_no0, mt2)
 var1 = "fp_subsite"
@@ -1863,7 +2079,7 @@ pile_d <- pile_ancoms[[2]] + labs(title = NULL, x = "Site", y = "fractional\nabu
 ```
 
 ## overall figure
-```{r}
+```{r, warning=F, message=F}
 i=2.1
 tagsize=24
 smallsize = 16
@@ -1928,7 +2144,7 @@ pwd
 ```
 
 ### Table S5 (Permanova)
-```{r}
+```{r, warning=F, message=F}
 file_path <- "lymanfruits"
 mapper_file <- "~/Dropbox/sequencing/2022-08-ECrun1and2/mapper_1and2_WendyJMC.tsv"
 
@@ -1949,7 +2165,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 ```
 
 ### taxon plot
-```{r}
+```{r, warning=F, message=F}
 file_path <- "lymanfruits"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 map_path = "-eastcoast" # taxonomy folder extension
@@ -1990,7 +2206,7 @@ plot(wf_legend)
 ```
 
 ### ancom - no differences with fruittype or subsite
-```{r}
+```{r, warning=F, message=F}
 var1 = "fruittype"
 var2 = "noSubSite"
 var3 = "fruittype"
@@ -2059,7 +2275,7 @@ pwd
 ```
 
 ### Table S6 (permanova)
-```{r}
+```{r, warning=F, message=F}
 file_path <- "gflies"
 mapper_file <- "mapper.tsv"
 
@@ -2076,7 +2292,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 ```
 
 ### Taxon plot
-```{r}
+```{r, warning=F, message=F}
 
 # apoc dls4or6= a47c56b57bbcbc2940d672582f8a7249 - 99.59 % # k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter_ s___a47c56b57bbcbc2940d672582f8a7249
 # atrc dls5 = d5e253f9fd3d9fff16e51560b9ba1add - 100% # k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter_ s___d5e253f9fd3d9fff16e51560b9ba1add
@@ -2157,7 +2373,7 @@ plot(fv_legend)
 ```
 
 ### ANCOM
-```{r}
+```{r, warning=F, message=F}
 rm(melted_table, melted_table_no0, mt2)
 var1 = "FruitGuess"
 var2 = "Exp"
@@ -2186,7 +2402,7 @@ for (i in "X.OTU.ID") {
 ```
 
 ## overall figure
-```{r}
+```{r, warning=F, message=F}
 i=1.7
 tagsize=40
 smallsize = 22
@@ -2243,7 +2459,7 @@ pwd
 ```
 
 ## Table S8 (PERMANOVA)
-```{r}
+```{r, warning=F, message=F}
 file_path <- "allbutS"
 mapper_file <- "joe_mapper.tsv"
 
@@ -2267,7 +2483,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 ```
 
 ## taxon plots
-```{r}
+```{r, warning=F, message=F}
 smallsize = 16
 
 file_path = "allbutS"
@@ -2317,7 +2533,7 @@ lineartime_plot + xlim(c(0,70))
 ```
 
 ## timeline plots
-```{r}
+```{r, warning=F, message=F}
 timeline <- readr::read_tsv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/joe_mapper.tsv", show_col_types = F, ) %>% dplyr::rename('X.SampleID' = `#SampleID`)
 
 file_path <- "allbutS"
@@ -2386,7 +2602,7 @@ joepiles_gantt2
 ```
 
 ## figure SX - mantel tests
-```{r}
+```{r, warning=F, message=F}
 file_path <- "allbutS"
 mapper_file <- "joe_mapper.tsv"
 
@@ -2428,7 +2644,7 @@ grid.arrange(time_UUmantel + labs(tag = "A", y = "Microbiota distance\n(weighted
 ```
 
 ## ancom - used these
-```{r}
+```{r, warning=F, message=F}
 file_path = "allbutS"
 rm(melted_table, melted_table_no0, mt2)
 mapper_file <- "joe_mapper.tsv"
@@ -2623,7 +2839,7 @@ cor.test(peachtime_cortest_glucono$Group, peachtime_cortest_glucono$mean, method
 ```
 
 ### overall figure
-```{r}
+```{r, warning=F, message=F}
 file_path <- "allbutS"
 mapper_file <- "joe_mapper.tsv"
 
@@ -2696,7 +2912,7 @@ c(rep(14,15))
 
 # Figure 5
 # Development panel B
-```{r}
+```{r, warning=F, message=F}
 
 dev_r1 <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/dev_r1.csv", show_col_types = F) %>% dplyr::select(-`...1`)
 
@@ -2788,12 +3004,42 @@ bfs <- plot(survfit(S~treatment, dev_filtered_bf), lwd=3, col=c("black","black",
 legend(x=10, y=1, c("Rudman At-inoculated","Rudman Lb-inoculated"), col=c("black","black","black"), lty= c(1,2),lwd=3, bty = "n")
 ```
 
+```{r, warning=F, message=F}
+permanova_name = "conant"
+bc_analysis("conant_test1", paste0("cfu_mapper_",permanova_name,".tsv"), "~ Treatment * Sex + exp", permutations = 1000)
+bc_analysis("conant_test1", paste0("cfu_mapper_",permanova_name,".tsv"), "~ source/Treatment * Sex + exp", permutations = 1000)
+bc_analysis("conant_test1", paste0("cfu_mapper_",permanova_name,".tsv"), "~ source * Sex + exp", permutations = 1000)
+
+make_charts <-readr::read_tsv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/cfu_data.tsv", show_col_types = F) %>% dplyr::rename(`#SampleID` = codename) %>% relocate(`#SampleID`) %>% mutate(source = ifelse(Treatment %in% c("ER","TI","TW"), "apple",ifelse(Treatment %in% c("P19","P20","P21"), "pile","somethingelse"))) %>% filter(total > 2500)
+
+cfu1 <- make_chart_stats_96_bar_jitter_violin(bac = make_charts %>% filter(Sex == "M"), column = "source", plotout = 1, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10000, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Diet source", y = "fractional abundance") + theme(legend.position = "none") 
+cfu2 <- make_chart_stats_96_bar_jitter_violin(bac = make_charts %>% filter(Sex == "M"), column = "source", plotout = 2, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10000, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Diet source", y = "fractional abundance") + theme(legend.position = "none") 
+cfu3 <- make_chart_stats_96_bar_jitter_violin(bac = make_charts %>% filter(Sex == "F"), column = "source", plotout = 1, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10000, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Diet source", y = "fractional abundance") + theme(legend.position = "none") 
+cfu4 <- make_chart_stats_96_bar_jitter_violin(bac = make_charts %>% filter(Sex == "F"), column = "source", plotout = 2, yaxis = NULL, aceto_bottom = F,logplot = F, baradjust = 10000, loglabeladjust = 10,baradjust_bottom = -0, yaxis_perc = c(0,1), perc_errorbars = NULL, add_jitter = T, add_violin = T) +   labs(x = "Diet source", y = "fractional abundance") + theme(legend.position = "none") 
+
+#jpeg(h=8, w=9.5, "pile_cfus.jpg", units = "in", res=300)
+grid.arrange(cfu1 + labs(tag = "A") + scale_x_discrete(labels = c("Apple","Compost")),
+             cfu2 + labs(tag = "B")+ scale_x_discrete(labels = c("Apple","Compost")),
+             cfu3 + labs(tag = "C")+ scale_x_discrete(labels = c("Apple","Compost")),
+             cfu4 + labs(tag = "D")+ scale_x_discrete(labels = c("Apple","Compost")),
+             widths = c(1,1),
+#             heights = c(1,.5,.3,1.2,.8,.75,.8),
+             heights = c(1,1),
+             layout_matrix=rbind(		
+               c(1,2),
+               c(3,4)
+              )
+)
+#dev.off()
+
+
+```
 
 
 # Supporting analyses
 ## lyman fruits
 ### taxon plot
-```{r}
+```{r, warning=F, message=F}
 
 file_path <- "lymanfruits"
 mapper_file <- "~/Dropbox/sequencing/2022-08-ECrun1and2/mapper_1and2_WendyJMC.tsv"
@@ -2851,7 +3097,7 @@ wild_fruits_wolb
 ```
 
 ### ANCOM
-```{r}
+```{r, warning=F, message=F}
 
 ###
 # ANCOM
@@ -2930,7 +3176,7 @@ lyman_ancomplot_ASV
 ```
 
 ## overall figure
-```{r}
+```{r, warning=F, message=F}
 
 getwd()
 i=1.7
@@ -2963,7 +3209,7 @@ grid.arrange(wild_fruits_wolb + labs(tag = "A") + theme(plot.tag = element_text(
              )
 )
 #dev.off()
-
+ 
 ```
 
 
