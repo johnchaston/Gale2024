@@ -49,7 +49,7 @@ make_distance_plot_1var <- function (file_path = file_path, folder_path = "weigh
 	## melt the table and get out just the right comparisons
 	melt_table <- data.frame(melt(fs3)) %>% 
 		filter(is.na(value)==F, value!=0) %>% 
-	  mutate(Var1 = gsub(".","",Var1), Va2 = gsub(".","",Var2)) %>%
+	  mutate(Var1 = gsub("\\.","",Var1), Va2 = gsub("\\.","",Var2)) %>%
 	  inner_join(flies_unifrac_table, by=c("Var1"=the_xid)) %>% 
 		inner_join(flies_unifrac_table, by=c("Var2"=the_xid)) %>%  
 		mutate(gs.x = as.character(get(paste0(var1,".x"))), gs.y=as.character(get(paste0(var1,".y")))) %>% 
