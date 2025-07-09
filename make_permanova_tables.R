@@ -6,7 +6,7 @@ i="unweighted_unifrac"
   for(i in beta_div_tests) {
   assign(x = paste0("flies_",i), value = read.table(paste('core-metrics-results-',file_path,'/',i,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t") %>% mutate(X=as.character(X)))
   assign(x = paste0("flies_",i,"_dm"), value = as.dist(get(paste0("flies_",i))[,2:dim(get(paste0("flies_",i)))[2]]))
-  flies_unifrac_table <- get(paste0("flies_",i)) %>% dplyr::select(X) %>% left_join(read.table(mapper_file,comment.char = "", header=T, fill=T, sep="\t"), by=c("X"="X.SampleID")) %>% droplevels()
+  flies_unifrac_table <- get(paste0("flies_",i)) %>% dplyr::select(X) %>% left_join(read.table(mapper_file,comment.char = "", header=T, fill=T, sep="\t", quote = '"'), by=c("X"="X.SampleID")) %>% droplevels()
   set.seed(seed_to_set)
   assign(x = paste0("f_",i,"_permanova"), adonis2(as.formula(paste0("flies_",i,"_dm ",pform)), flies_unifrac_table, permutations=1000, by = "terms"))
   assign(x = paste0("fig_",i), value = tableGrob(data.frame(Df = round(get(paste0("f_",i,"_permanova"))$Df, 2), SS = round(get(paste0("f_",i,"_permanova"))$SumOfSqs, 2), R2 = round(get(paste0("f_",i,"_permanova"))$R2, 2), Fval = round(get(paste0("f_",i,"_permanova"))$`F`, 2), p = round(get(paste0("f_",i,"_permanova"))$`Pr(>F)`, 2)),theme=ttheme_minimal()))
