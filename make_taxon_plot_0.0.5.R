@@ -186,7 +186,7 @@ prep_taxon_plot_numbersfirst <- function(
   
   rare_taxa <- melted_table %>%
     group_by(cluster) %>%
-    dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+    dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
     filter(total < rpa_in_chart) %>%
     filter(!cluster %in% predefined_taxa) %>%
     dplyr::select(cluster) %>%
@@ -201,7 +201,7 @@ prep_taxon_plot_numbersfirst <- function(
   
   abun_taxa <- melted_table %>%
     group_by(cluster) %>%
-    dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+    dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
     #mutate(Freq = perc * length(table(melted_table[,x_cluster])) * read_depth) %>%
     mutate(Freq = perc * length(table(melted_table$X.SampleID)) * read_depth) %>%
     filter(perc >= rpa_in_chart) %>%
@@ -305,7 +305,7 @@ prep_taxon_plot <- function(
 
   rare_taxa <- melted_table %>%
     group_by(cluster) %>%
-    dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+    dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
     filter(total < rpa_in_chart) %>%
     filter(!cluster %in% predefined_taxa) %>%
     dplyr::select(cluster) %>%
@@ -320,7 +320,7 @@ prep_taxon_plot <- function(
 
   abun_taxa <- melted_table %>%
     group_by(cluster) %>%
-    dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+    dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
     #mutate(Freq = perc * length(table(melted_table[,x_cluster])) * read_depth) %>%
     mutate(Freq = perc * length(table(melted_table$X.SampleID)) * read_depth) %>%
     filter(perc >= rpa_in_chart | cluster %in% predefined_taxa) %>%
@@ -453,7 +453,7 @@ make_taxon_plot_condensed <- function (
   working_df <- ptp[[1]] %>% 
     filter(groupid == i) %>% droplevels()
   head(working_df)
-  num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n()))[1]
+  num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n(), .groups = "keep"))[1]
   abun_taxa_df <- working_df %>%
     filter((cluster%in%ptp[[3]]$Var1)) %>% 
     group_by(across(all_of(varnames2)),cluster) %>% 
@@ -589,7 +589,7 @@ make_taxon_plot_condensed_nofacet <- function (
     working_df <- ptp[[1]] %>% 
       filter(groupid == i) %>% droplevels()
     head(working_df)
-    num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n()))[1]
+    num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n(), .groups = "keep"))[1]
     abun_taxa_df <- working_df %>%
       filter((cluster%in%ptp[[3]]$Var1)) %>% 
       group_by(across(all_of(varnames2)),cluster) %>% 
@@ -741,7 +741,7 @@ make_taxon_plot_condensed_numericX <- function (
     working_df <- ptp[[1]] %>% 
       filter(groupid == i) %>% droplevels()
     head(working_df)
-    num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n()))[1]
+    num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n(), .groups = "keep"))[1]
     abun_taxa_df <- working_df %>%
       filter((cluster%in%ptp[[3]]$Var1)) %>% 
       group_by(across(all_of(varnames2)),cluster) %>% 
@@ -853,14 +853,14 @@ prep_taxon_plot_byOrder <- function(
   if(is.null(taxa_filter)) {
     rare_taxa <- melted_table %>%
       group_by(cluster) %>%
-      dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+      dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
       filter(total < rpa_in_chart) %>%
       dplyr::select(cluster) %>%
       unlist() %>% unname() %>% as.character()
   } else {
     rare_taxa <- melted_table %>%
       group_by(cluster) %>%
-      dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+      dplyr::summarize(total = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
       filter(total < rpa_in_chart) %>%
       filter(grepl(x = cluster, taxa_filter)) %>%
       dplyr::select(cluster) %>%
@@ -878,7 +878,7 @@ prep_taxon_plot_byOrder <- function(
   if(is.null(taxa_filter)) {
     abun_taxa <- melted_table %>%
       group_by(cluster) %>%
-      dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+      dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
       #mutate(Freq = perc * length(table(melted_table[,x_cluster])) * read_depth) %>%
       mutate(Freq = perc * length(table(melted_table$X.SampleID)) * read_depth) %>%
       filter(perc >= rpa_in_chart) %>%
@@ -887,7 +887,7 @@ prep_taxon_plot_byOrder <- function(
   } else {
     abun_taxa <- melted_table %>%
       group_by(cluster) %>%
-      dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth) %>%
+      dplyr::summarize(perc = sum(Count)/length(table(melted_table$X.SampleID))/read_depth, .groups = "keep") %>%
       #mutate(Freq = perc * length(table(melted_table[,x_cluster])) * read_depth) %>%
       mutate(Freq = perc * length(table(melted_table$X.SampleID)) * read_depth) %>%
       filter(grepl(x = cluster, taxa_filter)) %>%
@@ -955,7 +955,7 @@ make_taxon_plot_condensed_byOrder <- function (
       filter(groupid == i) %>%
       #    filter(grepl(x = cluster, taxa_filter)) %>% 
       droplevels()
-    num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n()))[1]
+    num_groups <- dim(working_df %>% group_by(get(repcol)) %>% dplyr::summarize(count = dplyr::n(), .groups = "keep"))[1]
     abun_taxa_df <- working_df %>%
       filter((cluster%in%ptp[[3]]$Var1)) %>% 
       group_by(across(all_of(varnames2)),cluster) %>% 
