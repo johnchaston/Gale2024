@@ -457,14 +457,14 @@ make_taxon_plot_condensed <- function (
   abun_taxa_df <- working_df %>%
     filter((cluster%in%ptp[[3]]$Var1)) %>% 
     group_by(across(all_of(varnames2)),cluster) %>% 
-    dplyr::summarise(phylum.abun = (sum(Count))/(read_depth)/num_groups) %>%
+    dplyr::summarise(phylum.abun = (sum(Count))/(read_depth)/num_groups, .groups = "keep") %>%
     ungroup() %>% 
     inner_join(ptp[[3]], by = c("cluster"="Var1")) %>%
     dplyr::select(-Freq,-perc,-cluster)
   rare_taxa_df <- working_df %>% 
     filter(!cluster%in%(ptp[[3]])$Var1) %>% 
     group_by(across(all_of(varnames2))) %>% 
-    dplyr::summarise(phylum.abun = (sum(Count))/(read_depth)/num_groups) %>%
+    dplyr::summarise(phylum.abun = (sum(Count))/(read_depth)/num_groups, .groups = "keep") %>%
     ungroup() %>% 
     mutate(shortname = "other")    
   growing_df <- bind_rows(growing_df,abun_taxa_df,rare_taxa_df)  
