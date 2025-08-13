@@ -3,11 +3,12 @@ title: "Gale 2024 script"
 output: html_document
 ---
 
-# 0.0.1 revisings Sep 2024 
+# 0.0.1 revisions Sep 2024 
+# 0.0.2 revisions Jun 2025
+# 0.0.3 revisions Aug 2025
 
 # get started
 ```{r get started}
-
 library(multcomp)#
 library(dunn.test)#
 library(rcompanion)#
@@ -33,6 +34,8 @@ library(ggpubr)
 library(stringr)
 library(survival)
 library(survminer)
+library(coxme)
+
 
 source(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/ancom_tests.R")
 source(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/g_legend.R")
@@ -97,11 +100,174 @@ predefined_colors <- c("green4","green4",
                      )
 
 
+pcoa_manyvar_solidlineplot <- function(folder_name = folder_name, mapper_file = mapper_file, title_name_add = title_name_add, legend_position = legend_position,pco1=1,pco2=2,shape_var = shape_var,color_var = color_var,fill_var = fill_var,circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, circle_color = "black", legend_name = NULL, legend_label = NULL) {
+  
+  varnames = c(shape_var, color_var, fill_var, circle_var,linetype_var)
+  varnames <- varnames[!duplicated(varnames)]
+  	wfpc <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt',sep=""), sep="\t", fill=T, skip = 9,blank.lines.skip = T, header=F),-2)
+	pc2 <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt', sep = ""), sep="\t", fill=T, skip = 3, header=F, colClasses = "character"),2)
+	pc_values <- as.numeric(as.character(pc2[2,]))*100
 
+		wfpc <- wfpc[,c(1,pco1+1, pco2+1)] 
+	
+	fut2 <- read.table(paste('core-metrics-results-',folder_name,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t", stringsAsFactors = T) %>% 
+	  dplyr::select(X) %>% 
+	  mutate(X=as.character(X)) %>% 
+	  left_join(read.table(paste0(mapper_file),comment.char = "", header=T, sep="\t") %>% dplyr::select(all_of(varnames),X.SampleID), by=c("X"="X.SampleID"))
+	
+	uwmpc_all <- wfpc %>% 
+	  inner_join(fut2, by=c("V1"="X")) %>%
+	  mutate(shape_var = as.factor(as.character(get(shape_var))),
+	         color_var = as.factor(as.character(get(color_var))),
+	         circle_var = as.factor(as.character(get(circle_var))),
+	         fill_var = as.factor(as.character(get(fill_var))),
+	         linetype_var = as.factor(as.character(get(linetype_var)))
+	  ) %>% droplevels()
+	
+	shape_table <- table(list(uwmpc_all[,shape_var]))
+	fill_table <- table(list(uwmpc_all[,fill_var]))
+	color_table <- table(list(uwmpc_all[,color_var]))
+	circle_table <- table(list(uwmpc_all[,circle_var]))
+	linetype_table <- table(list(uwmpc_all[,linetype_var]))
+	
+	cat("Shapes:",length(shape_table),"values")
+	print(shape_table)
+	cat("Fill:",length(fill_table),"values")
+	print(fill_table)
+	cat("Color:",length(color_table),"values")
+	print(color_table)
+	cat("Ellipse:",length(circle_table),"values")
+	print(circle_table)
+	cat("Linetype:",length(circle_table),"values")
+	print(linetype_table)
+	# 
+	# plot_shapes <- c("square","circle")
+	# plot_fills <- c("green","green")
+	# plot_colors <- c("red","black")
+	# plot_ellipses <- c(1:38)
+	# 
+	# legend_position = "bottom"
+	#str(uwmpc_all)
+	
+	uwmpc_all$axis1 <- round(uwmpc_all[,paste0("V",pco1+1)],10)
+	uwmpc_all$axis2 <- round(uwmpc_all[,paste0("V",pco2+1)],10)
+	
+	if(is.null(legend_name)){
+	  legend_name = c(color_var, fill_var, shape_var, linetype_var)
+	}
+	
+	if(is.null(legend_label)){
+	  legend_label = list(colors = names(color_table)[color_table!=0], fills = names(fill_table)[fill_table!=0], shapes = names(shape_table)[shape_table!=0], linetypes = names(linetype_table)[linetype_table!=0])
+	}
+	
+	ggplot(uwmpc_all, aes(x = axis1, y = axis2, colour=color_var, shape=shape_var, fill=fill_var, lty = linetype_var)) + 
+		geom_point(alpha = 1, size=2.5) + #, shape=plot_shapes, size=3, col=plot_colors) + 
+		scale_color_manual(name=legend_name[1], labels=legend_label[[1]], values=plot_colors) + 
+		scale_fill_manual(name=legend_name[2], labels=legend_label[[2]], values=plot_fills) + 
+		scale_shape_manual(name=legend_name[3],labels=legend_label[[3]], values=plot_shapes) + 
+#	 scale_linetype_manual(name=legend_name[4],labels=legend_label[[4]], values=plot_ellipses) +
+	  #		scale_fill_manual(name="Legend", values=c("red","black","white")) +
+		theme(panel.background = element_blank(), 
+					axis.line = element_line(), 
+					axis.ticks=element_blank(), 
+					axis.title=element_text(size=14),	
+					#           title=element_text(size=16),
+					legend.position=legend_position,
+					plot.title = element_text(size=16, hjust=0),
+					axis.text = element_blank())+
+		labs(x = paste("PCo",pco1," ( ",round(as.numeric(pc_values[pco1]),1),"% )",sep=""), 
+				 y = paste("PCo",pco2," ( ",round(as.numeric(pc_values[pco2]),1),"% )",sep=""), 
+				 title = title_name_add) + 
+		stat_ellipse(aes(x = axis1, y = axis2, group= circle_var, linetype = circle_var), show.legend = T, type = "t", geom = "polygon", level = 0.95, alpha = 0, inherit.aes=T, lty = 1) 
+	  
+
+}
+
+pcoa_manyvar_noellipse <- function(folder_name = folder_name, mapper_file = mapper_file, title_name_add = title_name_add, legend_position = legend_position,pco1=1,pco2=2,shape_var = shape_var,color_var = color_var,fill_var = fill_var,circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, circle_color = "black", legend_name = NULL, legend_label = NULL) {
+  
+  varnames = c(shape_var, color_var, fill_var, circle_var,linetype_var)
+  varnames <- varnames[!duplicated(varnames)]
+  	wfpc <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt',sep=""), sep="\t", fill=T, skip = 9,blank.lines.skip = T, header=F),-2)
+	pc2 <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt', sep = ""), sep="\t", fill=T, skip = 3, header=F, colClasses = "character"),2)
+	pc_values <- as.numeric(as.character(pc2[2,]))*100
+
+		wfpc <- wfpc[,c(1,pco1+1, pco2+1)] 
+	
+	fut2 <- read.table(paste('core-metrics-results-',folder_name,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t", stringsAsFactors = T) %>% 
+	  dplyr::select(X) %>% 
+	  mutate(X=as.character(X)) %>% 
+	  left_join(read.table(paste0(mapper_file),comment.char = "", header=T, sep="\t") %>% dplyr::select(all_of(varnames),X.SampleID), by=c("X"="X.SampleID"))
+	
+	uwmpc_all <- wfpc %>% 
+	  inner_join(fut2, by=c("V1"="X")) %>%
+	  mutate(shape_var = as.factor(as.character(get(shape_var))),
+	         color_var = as.factor(as.character(get(color_var))),
+	         circle_var = as.factor(as.character(get(circle_var))),
+	         fill_var = as.factor(as.character(get(fill_var))),
+	         linetype_var = as.factor(as.character(get(linetype_var)))
+	  ) %>% droplevels()
+	
+	shape_table <- table(list(uwmpc_all[,shape_var]))
+	fill_table <- table(list(uwmpc_all[,fill_var]))
+	color_table <- table(list(uwmpc_all[,color_var]))
+	circle_table <- table(list(uwmpc_all[,circle_var]))
+	linetype_table <- table(list(uwmpc_all[,linetype_var]))
+	
+	cat("Shapes:",length(shape_table),"values")
+	print(shape_table)
+	cat("Fill:",length(fill_table),"values")
+	print(fill_table)
+	cat("Color:",length(color_table),"values")
+	print(color_table)
+	cat("Ellipse:",length(circle_table),"values")
+	print(circle_table)
+	cat("Linetype:",length(circle_table),"values")
+	print(linetype_table)
+	# 
+	# plot_shapes <- c("square","circle")
+	# plot_fills <- c("green","green")
+	# plot_colors <- c("red","black")
+	# plot_ellipses <- c(1:38)
+	# 
+	# legend_position = "bottom"
+	#str(uwmpc_all)
+	
+	uwmpc_all$axis1 <- round(uwmpc_all[,paste0("V",pco1+1)],10)
+	uwmpc_all$axis2 <- round(uwmpc_all[,paste0("V",pco2+1)],10)
+	
+	if(is.null(legend_name)){
+	  legend_name = c(color_var, fill_var, shape_var, linetype_var)
+	}
+	
+	if(is.null(legend_label)){
+	  legend_label = list(colors = names(color_table)[color_table!=0], fills = names(fill_table)[fill_table!=0], shapes = names(shape_table)[shape_table!=0], linetypes = names(linetype_table)[linetype_table!=0])
+	}
+	
+	ggplot(uwmpc_all, aes(x = axis1, y = axis2, colour=color_var, shape=shape_var, fill=fill_var, lty = linetype_var)) + 
+		geom_point(alpha = 1, size=2.5) + #, shape=plot_shapes, size=3, col=plot_colors) + 
+		scale_color_manual(name=legend_name[1], labels=legend_label[[1]], values=plot_colors) + 
+		scale_fill_manual(name=legend_name[2], labels=legend_label[[2]], values=plot_fills) + 
+		scale_shape_manual(name=legend_name[3],labels=legend_label[[3]], values=plot_shapes) + 
+#	 scale_linetype_manual(name=legend_name[4],labels=legend_label[[4]], values=plot_ellipses) +
+	  #		scale_fill_manual(name="Legend", values=c("red","black","white")) +
+		theme(panel.background = element_blank(), 
+					axis.line = element_line(), 
+					axis.ticks=element_blank(), 
+					axis.title=element_text(size=14),	
+					#           title=element_text(size=16),
+					legend.position=legend_position,
+					plot.title = element_text(size=16, hjust=0),
+					axis.text = element_blank())+
+		labs(x = paste("PCo",pco1," ( ",round(as.numeric(pc_values[pco1]),1),"% )",sep=""), 
+				 y = paste("PCo",pco2," ( ",round(as.numeric(pc_values[pco2]),1),"% )",sep=""), 
+				 title = title_name_add)  
+
+
+}
 
 ```
 
-## Figure S8 CFUs
+## Figure S9 CFUs
 ```{sh}
 # name=conant
 # biom convert -i otu_out_manual_""$name.txt -o cfu_asv_table_$name"".biom --to-hdf5 --table-type="OTU table"
@@ -167,7 +333,17 @@ ecmap <- ggplot() +
   geom_line(data = sampling_sites %>% filter(location %in% c("etna, me","North Chester")), aes(y=latitude, x=longitude * -1), linewidth = 1, color = "steelblue") +
   theme(legend.position = "none")
 
+ecmap2 <- ggplot() + 
+  geom_polygon(data=east_coast, aes(x=long, y=lat, group=group2), color="grey",fill=east_coast$color) + 
+  coord_fixed(1.3) + 
+  theme_void() + 
+  geom_point(data = sampling_sites, aes(y=latitude, x=longitude * -1, shape = location), size = 2.5, color = "black") + 
+  scale_shape_manual(values = c(1:10,18,12:17,0)) +
+  #geom_line(data = sampling_sites %>% filter(location %in% c("Grandaddys","Brysons")), aes(y=latitude, x=longitude * -1), linewidth = 1, color = "steelblue") +
+   theme(legend.position = "none")
+
 ecmap
+ecmap2
 
 # Harvard, MA	42.50867	-71.57071	Westward_F
 # Bowdoin, ME	44.0253	-69.94379	RockyRidge_I
@@ -219,6 +395,15 @@ wget -O taxonomy-Amber/taxonomy_forR.csv https://raw.githubusercontent.com/johnc
 mkdir taxonomy-megaC
 wget -O taxonomy-megaC/taxonomy_forR.csv https://raw.githubusercontent.com/johnchaston/Gale2024/main/taxonomy-megaC/taxonomy_forR.csv
 wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/amber_mapper_7_JMC_forcor.txt
+
+
+mkdir core-metrics-results-redo2009m2/unweighted_unifrac_pcoa_results/
+wget -O core-metrics-results-redo2009m2/unweighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-redo2009m2/unweighted_unifrac_pcoa_results/ordination.txt
+mkdir core-metrics-results-redo2009m2/weighted_unifrac_pcoa_results/
+wget -O core-metrics-results-redo2009m2/weighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-redo2009m2/weighted_unifrac_pcoa_results/ordination.txt
+mkdir core-metrics-results-redo2009m2/bray_curtis_pcoa_results/
+wget -O core-metrics-results-redo2009m2/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-redo2009m2/bray_curtis_pcoa_results/ordination.txt
+
 pwd
 ```
 
@@ -275,19 +460,83 @@ amberflies+ theme(strip.text.y = element_text(size=10))
 amber_table <- calculate_correlations(file_path = file_path,taxonomy_extension = "megaC", mapper_file = "amber_mapper_7_JMC_forcor.txt", use_fdr = F, defined_hierarchy = "genus", return_table = T)
 cortest_amber <- cor.test(amber_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, amber_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`, method = "spearman")
 corplot_amber <- ggplot(amber_table, aes(x = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, y = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`)) + geom_jitter(height = 0.1, width = 0.1) + stat_smooth(method = "lm", alpha = 0)
+
+
+taxonomic_level="order"
+prep_taxon_plot_numbersfirst(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+
+
 ```
+
+### pcoa plot
+```{r}
+file_path <- "redo2009m2"
+mapper_file <- "amber_mapper_7_JMC.tsv"
+map_path = "-Amber" # taxonomy folder extension
+
+points_data <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/megamap_latlong_sheet7.csv", show_col_types = F) 
+
+amberpoints <- ggplot(points_data %>% filter(plot=="amber"), aes(x = column, y = row, shape = symbol)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() +  theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(1,11.1))
+
+  ## plot by cornstage only
+shape_var = "latitude"
+color_var = "latitude"
+fill_var = "latitude"
+circle_var = "latitude"
+linetype_var = "latitude"
+plot_shapes <- points_data %>% filter(plot == "amber") %>% arrange(desc(sortorder)) %>% pull(symbol)
+plot_fills <- c(rep("black",6))
+plot_colors <- c(rep("black",6))
+
+i="weighted_unifrac"
+for (i in c("unweighted_unifrac","weighted_unifrac","bray_curtis")) {
+  if (i == "unweighted_unifrac") {title_name_add <- "Unweighted Unifrac"
+  } else if (i == "weighted_unifrac") {title_name_add <- "Weighted Unifrac"
+  } else if (i == "bray_curtis") {title_name_add <- "Bray Curtis"
+  }
+  legend_position = "none"
+  folder_name = paste0(file_path,"/",i)
+  assign(paste0("pcoag_cornstageonly_",i), pcoa_manyvar_noellipse(folder_name=folder_name, mapper_file = mapper_file, title_name_add=title_name_add, legend_position = legend_position, shape_var = shape_var, color_var = color_var, fill_var = fill_var, circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, pco1 =1, pco2=2))
+}
+# use v1 and v3 for bray curtis
+amber_pcoa_plot <- pcoag_cornstageonly_bray_curtis + theme(legend.position = "bottom") 
+amber_pcoa_plot
+
+
+```
+
+
 
 ## Henry flies
 ###  bash
 ```{bash}
 pwd
 mkdir core-metrics-results-flies_mantel2o2
+mkdir core-metrics-results-flies_mantel2o2/bray_curtis_pcoa_results
+mkdir core-metrics-results-flies_mantel2o2/unweighted_unifrac_pcoa_results
+mkdir core-metrics-results-flies_mantel2o2/weighted_unifrac_pcoa_results
 wget -O core-metrics-results-flies_mantel2o2/rarefied_table.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-flies_mantel2o2/rarefied_table.txt
+wget -O core-metrics-results-flies_mantel2o2/unweighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2o2/bray_curtis_pcoa_results/ordination.txt
+wget -O core-metrics-results-flies_mantel2o2/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2o2/bray_curtis_pcoa_results/ordination.txt
+wget -O core-metrics-results-flies_mantel2o2/unweighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2o2/unweighted_unifrac_pcoa_results/ordination.txt
+wget -O core-metrics-results-flies_mantel2o2/weighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2o2/weighted_unifrac_pcoa_results/ordination.txt
+
 wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/henrymapper2_JMC.txt
 mkdir taxonomy-henry
 wget -O taxonomy-henry/taxonomy_forR.csv https://raw.githubusercontent.com/johnchaston/Gale2024/main/taxonomy-henry/taxonomy_forR.csv
 mkdir core-metrics-results-flies_mantel2v2
+mkdir core-metrics-results-flies_mantel2v2/bray_curtis_pcoa_results
+mkdir core-metrics-results-flies_mantel2v2/unweighted_unifrac_pcoa_results
+mkdir core-metrics-results-flies_mantel2v2/weighted_unifrac_pcoa_results
 wget -O core-metrics-results-flies_mantel2v2/rarefied_table.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-flies_mantel2v2/rarefied_table.txt
+wget -O core-metrics-results-flies_mantel2v2/unweighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2v2/bray_curtis_pcoa_results/ordination.txt
+wget -O core-metrics-results-flies_mantel2v2/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2v2/bray_curtis_pcoa_results/ordination.txt
+wget -O core-metrics-results-flies_mantel2v2/unweighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2v2/unweighted_unifrac_pcoa_results/ordination.txt
+wget -O core-metrics-results-flies_mantel2v2/weighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-flies_mantel2v2/weighted_unifrac_pcoa_results/ordination.txt
+
+
+
 pwd
 ```
 
@@ -347,6 +596,12 @@ orchard_table <- calculate_correlations(file_path = file_path,taxonomy_extension
 cortest_orchard <- cor.test(orchard_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, orchard_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`, method = "spearman")
 corplot_orchard <- ggplot(orchard_table, aes(x = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, y = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`)) + geom_jitter(height = 0.1, width = 0.1) + stat_smooth(method = "lm", alpha = 0)
 
+taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+
+
 ```
 
 ### vineyard taxon plot
@@ -404,7 +659,32 @@ vineyard + theme(strip.text.y = element_text())
 vineyard_table <- calculate_correlations(file_path = file_path,taxonomy_extension = gsub(pattern = "-", replacement = "", map_path), mapper_file = mapper_file, frac_samples = .10, use_fdr = F, defined_hierarchy = "genus", return_table = T)
 cortest_vineyard <- cor.test(vineyard_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, vineyard_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`, method = "spearman")
 corplot_vineyard <- ggplot(vineyard_table, aes(x = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, y = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`)) + geom_jitter(height = 0.1, width = 0.1) + stat_smooth(method = "lm", alpha = 0)
+
+taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
 ```
+
+### orchard pcoa
+```{r}
+#setwd('~/Dropbox/sequencing/2022-09-henry/')
+plot_shapes <- points_data %>% filter(plot == "orchard") %>% arrange(desc(sortorder)) %>% pull(symbol) %>% rev()
+
+flies2o2pcoa <- pcoa_manyvar_noellipse(folder_name="flies_mantel2o2/bray_curtis", mapper_file = "henrymapper2_JMC.txt", title_name_add=NULL, legend_position = "none", shape_var = "latitude", color_var = "latitude", fill_var = "latitude", circle_var = "latitude", linetype_var = "latitude", plot_shapes = plot_shapes, plot_fills = c(rep("black",10)), plot_colors = c(rep("black",10)), plot_ellipses = NULL, pco1 =1, pco2=2)
+flies2o2pcoa
+```
+
+### vineyard pcoa
+```{r}
+#setwd('~/Dropbox/sequencing/2022-09-henry/')
+plot_shapes <- points_data %>% filter(plot == "vineyard") %>% arrange(desc(sortorder)) %>% pull(symbol)
+plot_shapes <- rev(c(15,14,14,10,3,7,1))
+
+flies2v2pcoa <- pcoa_manyvar_noellipse(folder_name="flies_mantel2v2/bray_curtis", mapper_file = "henrymapper2_JMC.txt", title_name_add=NULL, legend_position = "none", shape_var = "latitude", color_var = "latitude", fill_var = "latitude", circle_var = "latitude", linetype_var = "latitude", plot_shapes = plot_shapes, plot_fills = c(rep("black",7)), plot_colors = c(rep("black",7)), plot_ellipses = NULL, pco1 =1, pco2=2)
+flies2v2pcoa
+```
+
 
 ## East coast flies
 ### bash
@@ -412,7 +692,12 @@ corplot_vineyard <- ggplot(vineyard_table, aes(x = `k__Bacteria_ p__Proteobacter
 # bash ~/Dropbox/sequencing/16sscripts/standard_qiime3.sh ec1and2""_noW ec1and2 east_coast_overall3 500 mapper_1and2.tsv "sample_type = 'flies' AND species = 'melanogaster' AND starved = 'starved' AND subsite NOT IN ('pile')"
 pwd
 mkdir core-metrics-results-east_coast_overall3
+mkdir core-metrics-results-east_coast_overall3/bray_curtis_pcoa_results
 wget -O core-metrics-results-east_coast_overall3/rarefied_table.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-east_coast_overall3/rarefied_table.txt
+wget -O core-metrics-results-east_coast_overall3/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-east_coast_overall3/bray_curtis_pcoa_results/ordination.txt
+
+
+
 wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/mapper_1and2.tsv
 mkdir taxonomy-ec1and2
 wget -O taxonomy-ec1and2/taxonomy_forR.csv https://raw.githubusercontent.com/johnchaston/Gale2024/main/taxonomy-ec1and2/taxonomy_forR.csv
@@ -421,6 +706,7 @@ pwd
 
 ### taxon plot
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "east_coast_overall3"
 mapper_file <- "mapper_1and2.tsv"
 map_path = "-ec1and2" # taxonomy folder extension
@@ -463,7 +749,22 @@ ec2021 + theme(strip.text.y = element_text())
 ec_table <- calculate_correlations(file_path = file_path,taxonomy_extension = gsub(pattern = "-", replacement = "", map_path), mapper_file = mapper_file, use_fdr = F, defined_hierarchy = "genus", return_table = T)
 cortest_ec <- cor.test(ec_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, ec_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`, method = "spearman")
 corplot_ec <- ggplot(ec_table, aes(x = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, y = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`)) + geom_jitter(height = 0.1, width = 0.1) + stat_smooth(method = "lm", alpha = 0)
+
+taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
 ```
+
+### pcoa
+```{r}
+#setwd('~/Dropbox/sequencing/2022-08-ECrun1and2/')
+plot_shapes <- points_data %>% filter(plot == "ec") %>% arrange(desc(sortorder)) %>% pull(symbol)
+
+pcoaEC <- pcoa_manyvar_noellipse(folder_name="east_coast_overall3/bray_curtis", mapper_file = "mapper_1and2.tsv", title_name_add=NULL, legend_position = "none", shape_var = "latitude", color_var = "latitude", fill_var = "latitude", circle_var = "latitude", linetype_var = "latitude", plot_shapes = plot_shapes, plot_fills = c(rep("black",7)), plot_colors = c(rep("black",7)), pco1 =1, pco2=2)
+pcoaEC
+```
+
 
 ## UT
 ### bash
@@ -476,11 +777,17 @@ wget -O core-metrics-results-utah_mantel500S/rarefied_table.txt https://raw.gith
 wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/mapper_file_JMCv3_edit.tsv
 mkdir taxonomy-utflies2021
 wget -O taxonomy-utflies2021/taxonomy_forR.csv https://raw.githubusercontent.com/johnchaston/Gale2024/main/taxonomy-utflies2021/taxonomy_forR.csv
+
+#mkdir core-metrics-results-utah_mantel500S/bray_curtis_pcoa_results
+#wget -O core-metrics-results-utah_mantel500S/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/refs/heads/main/core-metrics-results-utah_mantel500S/bray_curtis_pcoa_results/ordination.txt
+
+
 pwd
 ```
 
 ### taxon plot
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "utah_mantel500S"
 mapper_file <- "mapper_file_JMCv3_edit.tsv"
 map_path = "-utflies2021" # taxonomy folder extension
@@ -515,6 +822,11 @@ ut2020 + theme(strip.text.y = element_text())
 utah_table <- calculate_correlations(file_path = file_path,taxonomy_extension = gsub(pattern = "-", replacement = "", map_path), mapper_file = mapper_file, use_fdr = F, defined_hierarchy = "genus", return_table = T)
 cortest_UT <- cor.test(utah_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, utah_table$`k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`, method = "spearman")
 corplot_UT <- ggplot(utah_table, aes(x = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Acetobacter`, y = `k__Bacteria_ p__Proteobacteria_ c__Alphaproteobacteria_ o__Rhodospirillales_ f__Acetobacteraceae_ g__Commensalibacter`)) + geom_jitter(height = 0.1, width = 0.1) + stat_smooth(method = "lm", alpha = 0)
+
+taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
 ```
 
 ## Mantel tests
@@ -637,6 +949,124 @@ putahlat_UU <- mantel_distance_plot(utahlat, y_title = "environmental distance (
 
 ```
 
+### Fig S4 -  latitude vs temperature
+```{r, warning=F, message=F}
+
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
+point_size = 0.1
+####
+## henry
+####
+
+bcd <- colnames(read.table("core-metrics-results-flies_mantel2o2/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("henrymapper2_JMC.txt", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2018.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location"))%>% dplyr::select(MaxTemp,latitude) %>% dplyr::distinct()
+cor.test(cde$MaxTemp, cde$latitude, method = "pearson")
+orchardcorplot <- ggplot(cde, aes(x = latitude, y = MaxTemp)) + geom_point() + theme_cowplot() + labs(x = "Latitude (°N)", y = "Daily maximum temperature (°C)")
+
+bcd <- colnames(read.table("core-metrics-results-flies_mantel2v2/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("henrymapper2_JMC.txt", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2018.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location"))%>% dplyr::select(MaxTemp,latitude) %>% dplyr::distinct()
+cor.test(cde$MaxTemp, cde$latitude, method = "pearson")
+plot(cde$MaxTemp, cde$latitude)
+vineyardcorplot <- ggplot(cde, aes(x = latitude, y = MaxTemp)) + geom_point() + theme_cowplot() + labs(x = "Latitude (°N)", y = "Daily maximum temperature (°C)")
+
+bcd <- colnames(read.table("core-metrics-results-redo2009m2/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("Amber_mapper_9.txt", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% gsub(pattern = "X", replacement = "", x = bcd))
+cde <- read.table("metadata_2009_to_12.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location")) %>% dplyr::select(MaxTemp,latitude) %>% dplyr::distinct()
+cor.test(cde$MaxTemp, cde$latitude, method = "pearson")
+plot(cde$MaxTemp, cde$latitude)
+ambercorplot <- ggplot(cde, aes(x = latitude, y = MaxTemp)) + geom_point() + theme_cowplot() + labs(x = "Latitude (°N)", y = "Daily maximum temperature (°C)")
+
+bcd <- colnames(read.table("core-metrics-results-east_coast_overall3/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("mapper_1and2.tsv", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2021_JMC.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location" = "site"))%>% dplyr::select(MaxTemp,latitude) %>% dplyr::distinct()
+cor.test(cde$MaxTemp, cde$latitude, method = "pearson")
+plot(cde$MaxTemp, cde$latitude)
+eccorplot <- ggplot(cde, aes(x = latitude, y = MaxTemp)) + geom_point() + theme_cowplot() + labs(x = "Latitude (°N)", y = "Daily maximum temperature (°C)")
+
+bcd <- colnames(read.table("core-metrics-results-utah_mantel500S/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("mapper_file_JMCv3_edit.tsv", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2020.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location")) %>% mutate(latitude = ifelse(location == "Alpine, UT", 40.4457589, ifelse(location == "Logan, UT", 41.72573, ifelse(location == "Lindon1, UT", 40.3327707, ifelse(location == "Ogden, UT", 41.326252, ifelse(location == "Santaquin, UT", 39.966865, ifelse(location == "Lindon2, UT", 40.3327707,ifelse(location == "Lindon3, UT", 40.3327707,0)))))))) %>% dplyr::select(MaxTemp,latitude) %>% dplyr::distinct()
+cor.test(cde$MaxTemp, cde$latitude, method = "pearson")
+plot(cde$MaxTemp, cde$latitude)
+utahcorplot <- ggplot(cde, aes(x = latitude, y = MaxTemp)) + geom_point() + theme_cowplot() + labs(x = "Latitude (°N)", y = "Daily maximum temperature (°C)")
+
+#jpeg(h=3.7, w=12, "temp_and_latitude_correlations_pearson.jpg", units = "in", res=300)
+grid.arrange(ambercorplot + labs(tag="A") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = -0.27, p = 0.80"),
+             vineyardcorplot + labs(tag="B") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = -1.27, p = 0.26"),
+             orchardcorplot + labs(tag="C") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = -3.37, p < 0.01"),
+             eccorplot + labs(tag="D") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = -2.03, p = 0.10"),
+             utahcorplot + labs(tag="E") + stat_smooth(method = "lm", alpha = 0) + labs(title = )+ labs(title = "t = -0.50, p = 0.64"),
+             widths = c(1,1,1,1,1),
+             heights = c(1),
+             layout_matrix=rbind(		
+                c(1,2,3,4,5)
+             )
+)
+#dev.off()
+
+```
+
+### Fig S4 - humidity v UVI
+```{r, warning=F, message=F}
+
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
+point_size = 0.1
+
+
+p = "MaxRH" # AvgRH MinRH MaxRH
+o = "MaxUVI" #AvgUVI MaxUVI
+
+
+bcd <- colnames(read.table("core-metrics-results-flies_mantel2o2/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("henrymapper2_JMC.txt", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2018.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location"))%>% dplyr::select(all_of(p), all_of(o)) %>% dplyr::distinct()
+cor.test(cde[,p], cde[,o], method = "spearman")
+orchardcorplot <- ggplot(cde, aes(x = get(p), y = get(o))) + geom_point() + theme_cowplot() + labs(x = "Daily max RH", y = "Daily max UVI")
+
+bcd <- colnames(read.table("core-metrics-results-flies_mantel2v2/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("henrymapper2_JMC.txt", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2018.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location"))%>% dplyr::select(all_of(p), all_of(o)) %>% dplyr::distinct()
+cor.test(cde[,p], cde[,o], method = "spearman")
+vineyardcorplot <- ggplot(cde, aes(x = get(p), y = get(o))) + geom_point() + theme_cowplot() + labs(x = "Daily max RH", y = "Daily max UVI")
+
+bcd <- colnames(read.table("core-metrics-results-redo2009m2/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("Amber_mapper_9.txt", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% gsub(pattern = "X", replacement = "", x = bcd))
+cde <- read.table("metadata_2009_to_12.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location")) %>% dplyr::select(all_of(p), all_of(o)) %>% dplyr::distinct()
+cor.test(cde[,p], cde[,o], method = "spearman")
+ambercorplot <- ggplot(cde, aes(x = get(p), y = get(o))) + geom_point() + theme_cowplot() + labs(x = "Daily max RH", y = "Daily max UVI")
+
+bcd <- colnames(read.table("core-metrics-results-east_coast_overall3/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("mapper_1and2.tsv", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2021_JMC.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location" = "site"))%>% dplyr::select(all_of(p), all_of(o)) %>% dplyr::distinct()
+cor.test(cde[,p], cde[,o], method = "spearman")
+eccorplot <- ggplot(cde, aes(x = get(p), y = get(o))) + geom_point() + theme_cowplot() + labs(x = "Daily max RH", y = "Daily max UVI")
+
+bcd <- colnames(read.table("core-metrics-results-utah_mantel500S/rarefied_table.txt", header = T, comment.char = "", sep = "\t", skip = 1))
+abc <- read.table("mapper_file_JMCv3_edit.tsv", fill = T, sep = "\t", comment.char = "", header = T)%>% filter(X.SampleID %in% bcd)
+cde <- read.table("metadata_2020.txt", fill = T, sep = "\t", comment.char = "", header = T) %>% inner_join(abc, by = c("location")) %>% mutate(latitude = ifelse(location == "Alpine, UT", 40.4457589, ifelse(location == "Logan, UT", 41.72573, ifelse(location == "Lindon1, UT", 40.3327707, ifelse(location == "Ogden, UT", 41.326252, ifelse(location == "Santaquin, UT", 39.966865, ifelse(location == "Lindon2, UT", 40.3327707,ifelse(location == "Lindon3, UT", 40.3327707,0)))))))) %>% dplyr::select(all_of(p), all_of(o)) %>% dplyr::distinct()
+cor.test(cde[,p], cde[,o], method = "spearman")
+utahcorplot <- ggplot(cde, aes(x = get(p), y = get(o))) + geom_point() + theme_cowplot() + labs(x = "Daily max RH", y = "Daily max UVI")
+
+
+#jpeg(h=4, w=12, paste0(p,"_and_",o,"correlations.jpg"), units = "in", res=300)
+grid.arrange(ambercorplot + labs(tag="F") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = 1.48, p = 0.21"),
+             vineyardcorplot + labs(tag="G") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "No variation") + scale_x_continuous(breaks = 100, labels = 100, n.breaks = 1),
+             orchardcorplot + labs(tag="H") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = 2.32, p = 0.048"),
+             eccorplot + labs(tag="I") + stat_smooth(method = "lm", alpha = 0)+ labs(title = "t = -0.11, p = 0.92"),
+             utahcorplot + labs(tag="J") + stat_smooth(method = "lm", alpha = 0) + labs(title = )+ labs(title = "t = 0.04, p = 0.97"),
+             widths = c(1,1,1,1,1),
+             heights = c(1),
+             layout_matrix=rbind(		
+                c(1,2,3,4,5)
+             )
+)
+#dev.off()
+
+
+```
+
 ## DEST additions
 ```{sh, eval=F}
 pwd
@@ -655,6 +1085,12 @@ wget -O DESTmapper_v3.txt https://raw.githubusercontent.com/johnchaston/Gale2024
 wget -O DESTmapper_v3b.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/DESTmapper_v3b.txt
 mkdir taxonomy-DEST
 wget -O taxonomy-DEST/taxonomy_forR.csv https://raw.githubusercontent.com/johnchaston/Gale2024/main/taxonomy-DEST/taxonomy_forR.csv
+
+
+mkdir core-metrics-results-destusa/bray_curtis_pcoa_results
+wget -O core-metrics-results-destusa/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-destusa/bray_curtis_pcoa_results/ordination.txt
+mkdir core-metrics-results-desteuropea/bray_curtis_pcoa_results
+wget -O core-metrics-results-desteuropea/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-desteuropea/bray_curtis_pcoa_results/ordination.txt
 
 ```
 
@@ -742,10 +1178,16 @@ europe_plot <- base_plot +
   theme(strip.text.x = element_text(angle = 90, hjust=0), axis.text.x = element_blank(), strip.text.y = element_text(angle = 0), strip.background.x = element_rect(fill = "white"), legend.position = "none", axis.title = element_text(face = "bold")) + 
   labs(x = "Location") 
 europe_plot
+
+taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
 ```
 
 ## USA
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "destusa"
 map_path = "-DEST" # taxonomy folder extension
 plotvarnames = c("State","LocalityID") 
@@ -773,8 +1215,12 @@ usa_plot <- base_plot +
   labs(x = "Location") 
 usa_plot
 
-```
+taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
 
+
+```
 
 ## Table S3
 ```{r, warning=F, message=F, eval = F}
@@ -1293,7 +1739,50 @@ grid.arrange(ecmap + labs(tag = "A") + theme(plot.tag = element_text(face = "bol
 #dev.off()
 ```
 
-## Figure S2 - UU and WU mantel results
+## FigureS4
+```{r, warning=F, message=F}
+#points_data <- read_xlsx('~/Dropbox/east_coast_flies_manuscript/megamap_latlong.xlsx', sheet = "Sheet7")
+points_data <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/megamap_latlong_sheet7.csv", show_col_types = F) 
+
+amberpoints <- ggplot(points_data %>% filter(plot=="amber"), aes(x = column, y = row, shape = symbol)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() +  theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(1,11.1))
+vpoints <- ggplot(points_data %>% filter(plot=="vineyard"), aes(x = column, y = row, shape = symbol)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(1,11))
+opoints <- ggplot(points_data %>% filter(plot=="orchard"), aes(x = column, y = row, shape = symbol)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(1,11))
+ec21points <- ggplot(points_data %>% filter(plot=="ec"), aes(x = column, y = row, shape = symbol)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() +   theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(1,11))
+
+plot_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(nrow=6,byrow=TRUE)))
+
+plot_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=3,byrow=F)) + scale_fill_manual(name = "", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
+plot_legend_ec <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12)) + guides(fill=guide_legend(ncol=5,byrow=F)) + scale_fill_manual(name = "           ", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
+plot_legend_ec <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12)) + guides(fill=guide_legend(ncol=2,byrow=F)) + scale_fill_manual(name = "           ", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
+
+
+plot(plot_legend_ec)
+fig1tagsize=25
+mantel_size = 12
+
+
+ecmap
+
+
+
+#jpeg(h=4, w=16, "~/Dropbox/east_coast_flies_manuscript/FigureSXpcoa_may2025.jpg", units = "in", res=300)
+grid.arrange(ecmap2 + labs(tag = "A") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)), 
+             amber_pcoa_plot + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90)) + labs(tag = "B", title = NULL) + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             flies2v2pcoa + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90), axis.title.y = element_blank()) + labs(tag = "C") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             flies2o2pcoa + theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90), axis.title.y = element_blank()) + labs(tag = "D") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             pcoaEC+ theme(legend.position = "none", strip.text = element_blank(), panel.spacing = unit(-.1, "lines"), axis.text.x = element_text(size =12, angle = 90)) + labs(tag = "E") + theme(plot.tag = element_text(face = "bold", size = fig1tagsize)),
+             
+            layout_matrix=rbind(		
+                c(1,2,3,4,5)
+             ),
+             widths = c(1.5,1,1,1,1),
+             heights = c(1)
+)
+#dev.off()
+```
+
+
+## Figure S3 - UU and WU mantel results
 ```{r, warning=F, message=F}
 #jpeg(h=8*.875*1.5, w=28*.875*.75, "~/Dropbox/east_coast_flies_manuscript/Figure1_sep2024c_supp.jpg", units = "in", res=300)
 grid.arrange(pamberlat_WU + theme(text = element_text(size=mantel_size*1.15), axis.text = element_text(size=mantel_size)) + labs(x = "Env. distance\n (latitude (°))", y = "Microbiota distance", tag = "A")+ theme(plot.tag = element_text(face = "bold", size = fig1tagsize), plot.title = element_text(color = "blue", size = mantel_size * 1.15)),   
@@ -1349,31 +1838,6 @@ utpoints <- ggplot(points_data %>% filter(plot=="utah"), aes(x = column, y = row
 #dev.off()
 ```
 
-## Figure S5 - correlations figure
-```{r, warning=F, message=F}
-annotationsize = 2
-cortest_amber
-
-#jpeg(h=8*.875*.5, w=28*.875*.75*.75, "~/Dropbox/east_coast_flies_manuscript/FigureScorX_utah_july2024.jpg", units = "in", res=300)
-   grid.arrange(corplot_amber + labs(tag = "A", x = bquote(italic(Acetobacter)~"reads"), y = bquote(italic(Commensalibacter)~"reads")) + theme_cowplot() + ylim(c(-20,500)) + xlim(c(0,500)) +
-                  ggplot2::annotate(geom = "text", x = 500, y = 500, hjust=1, vjust=1, label = paste0("S = ",unname(round(cortest_amber$estimate,2)),"\np =  ", unname(round(cortest_amber$p.value,3))), size = 5),
-                corplot_vineyard + labs(tag = "B", x = bquote(italic(Acetobacter)~"reads"), y = bquote(italic(Commensalibacter)~"reads")) + theme_cowplot() + ylim(c(-20,500)) + xlim(c(0,500)) +
-                  ggplot2::annotate(geom = "text", x = 500, y = 500, hjust=1, vjust=1, label = paste0("S = ",unname(round(cortest_vineyard$estimate,2)),"\np =  ", unname(round(cortest_vineyard$p.value,3))), size = 5),
-                corplot_orchard + labs(tag = "C", x = bquote(italic(Acetobacter)~"reads"), y = bquote(italic(Commensalibacter)~"reads")) + theme_cowplot() + ylim(c(-20,500)) + xlim(c(0,500)) +
-                  ggplot2::annotate(geom = "text", x = 500, y = 500, hjust=1, vjust=1, label = paste0("S = ",unname(round(cortest_orchard$estimate,2)),"\np =  ", unname(round(cortest_orchard$p.value,4))), size = 5),
-                corplot_ec + labs(tag = "D", x = bquote(italic(Acetobacter)~"reads"), y = bquote(italic(Commensalibacter)~"reads")) + theme_cowplot() + ylim(c(-20,500)) + xlim(c(0,500)) +
-                  ggplot2::annotate(geom = "text", x = 500, y = 500, hjust=1, vjust=1, label = paste0("S = ",unname(round(cortest_ec$estimate,2)),"\np =  ", unname(round(cortest_ec$p.value,2))), size = 5),
-                corplot_UT + labs(tag = "E", x = bquote(italic(Acetobacter)~"reads"), y = bquote(italic(Commensalibacter)~"reads")) + theme_cowplot() + ylim(c(-20,500)) + xlim(c(0,500)) +
-                  ggplot2::annotate(geom = "text", x = 500, y = 500, hjust=1, vjust=1, label = paste0("S = ",unname(round(cortest_UT$estimate,2)),"\np =  ", unname(round(cortest_UT$p.value,2))), size = 5),
-               layout_matrix=rbind(		
-                c(1,2,3,4,5)
-             ),
-             widths = c(1,1,1,1,1),
-             heights = c(1)
-   )
-#dev.off()
-```
-
 # Figure 2
 ## Determine which samples go with each other
 ```{r, warning=F, message=F}
@@ -1382,7 +1846,7 @@ reference_table <- readr::read_tsv(file = "https://raw.githubusercontent.com/joh
 ```
 
 ## bash 1
-```{r, eval = F}
+```{sh, eval = F}
 conda activate qiime2-2022.11
 
 cd ~/Dropbox/sequencing/2022-08-ECrun1and2
@@ -1452,12 +1916,18 @@ for i in 4wayTaxon; do
 done
 
 wget -O core-metrics-results-4wayTaxon/rarefied_table.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-4wayTaxon/rarefied_table.txt
+mkdir core-metrics-results-4wayTaxon/bray_curtis_pcoa_results
+wget -O core-metrics-results-4wayTaxon/bray_curtis_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-4wayTaxon/bray_curtis_pcoa_results/ordination.txt
+mkdir core-metrics-results-4wayTaxon/weighted_unifrac_pcoa_results
+wget -O core-metrics-results-4wayTaxon/weighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-4wayTaxon/weighted_unifrac_pcoa_results/ordination.txt
+mkdir core-metrics-results-4wayTaxon/unweighted_unifrac_pcoa_results
+wget -O core-metrics-results-4wayTaxon/unweighted_unifrac_pcoa_results/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-4wayTaxon/unweighted_unifrac_pcoa_results/ordination.txt
 pwd
 ```
 
-
 ## Mantel tests
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 mantel_2groups_all3("mantel_starved_fruit_S","mantel_starved_fruit_F",mapper_file) # nonew
 mantel_2groups_all3("mantel_starved_unstarved_S","mantel_starved_unstarved_U",mapper_file) # UW = 0.046
@@ -1634,7 +2104,7 @@ wilcox.test(venns_starved_fruit2 %>% pull(perc2), venns_unstarved_fruit2 %>% pul
 
 ```
 
-### Venn diagram table
+## Venn diagram table
 ```{r, warning=F, message=F}
 all_starved_asvs <- get_single_core_features(file_path = "mantel_starved_fruit_S", map_path = map_path, mapper_file = mapper_file, var1 = var1, var2 = var2, var3 = var3, var4 = var4, var5 = NULL, Group = Group, taxonomic_level = "X.OTU.ID") %>%
   mutate(sum = rowSums(across(where(is.numeric)))) %>%
@@ -1807,6 +2277,8 @@ fruit_map
 
 ## permanova table
 ```{r, warning=F, message=F}
+
+#setwd('~/Dropbox/sequencing/2022-08-ECrun1and2/')
 file_path = "4wayTaxon"
 
   ## unweighted
@@ -1869,12 +2341,64 @@ quartet_taxon_plot <- base_plot +
 quartet_taxon_plot
 taxon_legend <- g_legend(quartet_taxon_plot + theme(legend.position = "bottom")+ labs(fill = NULL) + guides(fill=guide_legend(nrow=6,byrow=TRUE)))
   plot(taxon_legend)
+  
+  taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+```
+
+## pcoA plots
+```{r}
+
+plotvarnames = c("plotorder","orchard_subsite","site","ospo") 
+
+  ## plot by cornstage only
+shape_var = "plotorder"
+color_var = "plotorder"
+fill_var = "plotorder"
+circle_var = "plotorder"
+linetype_var = "plotorder"
+plot_shapes <- c(21,21,21,21)
+plot_fills <- c("cyan","orange","black","magenta","red","orange")
+plot_colors <- c("cyan","orange","black","magenta","red","orange")
+plot_ellipses <- c("solid","solid","solid","solid","solid","solid")
+i="weighted_unifrac"
+for (i in c("unweighted_unifrac","weighted_unifrac","bray_curtis")) {
+  if (i == "unweighted_unifrac") {title_name_add <- "Unweighted Unifrac"
+  } else if (i == "weighted_unifrac") {title_name_add <- "Weighted Unifrac"
+  } else if (i == "bray_curtis") {title_name_add <- "Bray Curtis"
+  }
+  legend_position = "none"
+  folder_name = paste0(file_path,"/",i)
+  assign(paste0("pcoag_cornstageonly_",i), pcoa_manyvar_solidlineplot(folder_name=folder_name, mapper_file = mapper_file, title_name_add=title_name_add, legend_position = legend_position, shape_var = shape_var, color_var = color_var, fill_var = fill_var, circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, pco1 =1, pco2=2, circle_color = plot_colors))
+}
+
+pcoag_cornstageonly_unweighted_unifrac
+pcoag_cornstageonly_weighted_unifrac + theme(legend.position = "bottom")
+bc_fig2_plot <- pcoag_cornstageonly_bray_curtis + theme(legend.position = "bottom")
+bc_fig2_plot
+
+# jpeg(h=600*i, w=1600*i, "Figure1_MF_nov2023.jpg", units = "px", quality = 0.9, pointsize = 1/300)
+# 	grid.arrange(	
+# 		plot_bc2016,plot_uw2016, plot_w2016,
+# 		plot_wuwlegend,
+# 		widths = c(1,1,1),	
+# 		heights = c(2,.3),	
+# 		layout_matrix=rbind(		
+# 			c(1,2,3),		
+# 			c(4,4,4))
+# 		)
+# dev.off()
+
+
+
 ```
 
 ## distance analysis
 ```{r, warning=F, message=F}
 file_path = "4wayTaxon"
-folder_path = "weighted_unifrac"
+folder_path = "bray_curtis"
 var1 = "plotorder"
 mapper_file = mapper_file
 comparisons = c("flies_starved_flies_starved", "flies_starved_flies_unstarved", "flies_starved_fruit_NA", "flies_starved_soil_NA", "flies_unstarved_flies_unstarved", "flies_unstarved_fruit_NA", "flies_unstarved_soil_NA", "fruit_NA_fruit_NA", "fruit_NA_soil_NA", "soil_NA_soil_NA")
@@ -1967,7 +2491,7 @@ axis.text.x = element_blank()
 ) +
   ggplot2::annotate("segment",x=Inf,xend=-Inf,y=Inf,yend=Inf,color="black",lwd=1) +
   labs(x = NULL)  +
-    geom_text(data = melt_table_plot, aes(y = 1.4, label = Letter))
+    geom_text(data = melt_table_plot, aes(y = 1.1, label = Letter))
 # grid.text("Comparison\ngroup", x = unit(0.1, "npc"), y = unit(.85, "npc"), hjust = 1, )
 # grid.text("Reference\ngroup", x = unit(0.1, "npc"), y = unit(.95, "npc"), hjust = 1, )
 distance_plot_sufs
@@ -1986,11 +2510,15 @@ for i in pile_flies; do
   mkdir core-metrics-results-$i""/$j
   wget -O core-metrics-results-$i""/$j/distance-matrix.tsv https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-$i""/$j/distance-matrix.tsv
   done;
+  for j in unweighted_unifrac_pcoa_results weighted_unifrac_pcoa_results bray_curtis_pcoa_results ; do
+  mkdir core-metrics-results-$i""/$j
+  wget -O core-metrics-results-$i""/$j/ordination.txt https://raw.githubusercontent.com/johnchaston/Gale2024/main/core-metrics-results-$i""/$j/ordination.txt
+  done;
 done
 pwd
 ```
 
-## Table S7 PERMANOVA
+## Table S4 PERMANOVA
 ```{r, warning=F, message=F}
 file_path <- "pile_flies"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
@@ -2009,6 +2537,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 
 ## taxon plots
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "pile_flies"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 
@@ -2042,10 +2571,61 @@ compost_plot <- make_taxon_plot_condensed(ptp = ptp, plot_color = plot_color, so
   coord_flip() + 
   theme(strip.text.y = element_blank(), axis.text.x = element_text(angle = 90), legend.position = "none") + 
   labs(x = "Sample")
+compost_plot
+
+  taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+```
+
+## pcoA plots 
+```{r}
+#setwd('~/Dropbox/sequencing/2022-08-ECrun1and2/')
+plotvarnames = c("plotorder","orchard_subsite","site","ospo") 
+  ## plot by cornstage only
+shape_var = "fps_location"
+color_var = "fp_subsite"
+fill_var = "fp_subsite"
+circle_var = "fp_subsite"
+linetype_var = "fp_subsite"
+plot_shapes <- c(15,16,17,0,1,2)
+plot_fills <- c("cyan","black","magenta","red","orange")
+plot_colors <- c("cyan","black","magenta","red","orange")
+plot_ellipses <- c("solid","solid","solid","solid","solid","solid")
+i="weighted_unifrac"
+for (i in c("unweighted_unifrac","weighted_unifrac","bray_curtis")) {
+  if (i == "unweighted_unifrac") {title_name_add <- "Unweighted Unifrac"
+  } else if (i == "weighted_unifrac") {title_name_add <- "Weighted Unifrac"
+  } else if (i == "bray_curtis") {title_name_add <- "Bray Curtis"
+  }
+  legend_position = "none"
+  folder_name = paste0(file_path,"/",i)
+  assign(paste0("pcoag_cornstageonly_",i), pcoa_manyvar_solidlineplot(folder_name=folder_name, mapper_file = mapper_file, title_name_add=title_name_add, legend_position = legend_position, shape_var = shape_var, color_var = color_var, fill_var = fill_var, circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, pco1 =1, pco2=2))
+}
+
+pcoag_cornstageonly_unweighted_unifrac
+pcoag_cornstageonly_weighted_unifrac + theme(legend.position = "bottom")
+bc_pile_flies <- pcoag_cornstageonly_bray_curtis + theme(legend.position = "bottom")
+bc_pile_flies
+
+# jpeg(h=600*i, w=1600*i, "Figure1_MF_nov2023.jpg", units = "px", quality = 0.9, pointsize = 1/300)
+# 	grid.arrange(	
+# 		plot_bc2016,plot_uw2016, plot_w2016,
+# 		plot_wuwlegend,
+# 		widths = c(1,1,1),	
+# 		heights = c(2,.3),	
+# 		layout_matrix=rbind(		
+# 			c(1,2,3),		
+# 			c(4,4,4))
+# 		)
+# dev.off()
+
 ```
 
 ## ancom
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 
 rm(melted_table, melted_table_no0, mt2)
 var1 = "fp_subsite"
@@ -2078,7 +2658,7 @@ pile_d <- pile_ancoms[[2]] + labs(title = NULL, x = "Site", y = "fractional\nabu
 
 ```
 
-## overall figure
+## Figure 2
 ```{r, warning=F, message=F}
 i=2.1
 tagsize=24
@@ -2088,35 +2668,66 @@ plot_this_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.t
 
 plot_this_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=2,byrow=F)) + scale_fill_manual(name = "", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
 
-#jpeg(h=6*i, w=8*i, "figure_sufs_aug2024.jpg", units = "in", res=300)
-grid.arrange(fruit_map,
-             plot_this_legend,
-             ggplot(labs2 %>% mutate(xval = c(1)) %>% mutate(yval = (81-c(7,20,32.5,47,59,69.5,78,81))), aes(x = xval, y = yval, shape = location)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme_void() +  theme(legend.position = "none")+   xlim(c(0.88,1.12)) + ylim(c(-4,84)),
-             quartet_taxon_plot + theme(axis.title.y = element_blank()) + theme(strip.text.x = element_text(face = "bold"), axis.title = element_text(face = "bold")),
+#jpeg(h=3*i, w=9*i, "figure_sufs_apr2025.jpg", units = "in", res=300)
+grid.arrange(bc_fig2_plot + theme(legend.position = "none", axis.title =element_text(face = "bold", size = smallsize)) + labs(title = NULL),
+             ggplot() + theme_void(),
              neutral_plot,
-             distance_plot_sufs + labs(y = "Bray-Curtis distance", x = "Comparison groups"),
-             ggplot() + theme_void(), 
-             ggplot() + theme_void(), 
-             compost_plot + theme(axis.title = element_text(face = "bold")) + labs(x = NULL),
-             pile_c + labs(tag = "G") + theme(axis.title.x = element_blank(), axis.text.x = element_blank(), plot.tag = element_text(face = "bold", size = tagsize), axis.title.y = element_text(size = smallsize)),
-             pile_d + labs(tag = "H", x= "Site sampled") + theme(plot.tag = element_text(face = "bold", size = tagsize), axis.title.y = element_text(size = smallsize)),
-ggplot(labs2 %>% filter(Geography %in% c("E","H","L")) %>% mutate(xval = c(1)) %>% mutate(yval = (81-c(9,(81/7*3),63))), aes(x = xval, y = yval, shape = location)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme_void() +  theme(legend.position = "none", axis.title.y = element_text(face = "bold", angle = 90, size = smallsize))+   xlim(c(0.88,1.12)) + ylim(c(-4,84)) + labs(y = "Sample"),
-             widths = c(0.6,0.6,.1,1,.1,.75,.6),
-             heights = c(3,1,.5,.5,1.4,1.6),
+             bc_pile_flies  + theme(legend.position = "none", axis.title =element_text(face = "bold", size = smallsize)) + labs(title = NULL),
+             pile_c + labs(tag = "E") + theme(axis.title.x = element_blank(), axis.text.x = element_blank(), plot.tag = element_text(face = "bold", size = tagsize), axis.title.y = element_text(size = smallsize)),
+             pile_d + labs(tag = "F", x= "Site sampled") + theme(plot.tag = element_text(face = "bold", size = tagsize), axis.title.y = element_text(size = smallsize)),
+             widths = c(2,2,2,1),
+             heights = c(1,1),
              layout_matrix=rbind(		
-                c(1,1,3,4,7,5,5),
-                c(1,1,3,4,7,6,6),
-                c(2,2,3,4,7,6,6),
-                c(2,2,3,4,7,6,6),
-                c(2,2,3,4,12,9,10),
-                c(8,8,3,4,12,9,11)
+                c(1,2,4,5),
+                c(1,3,4,6)
              )
              ) 
-#grid.text(c("Comparison","Reference","Comparison","Reference"), x = unit(c(0.705,.705,.695,.695), "npc"), y = unit(c(.912,.965,.415,.47), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=12)) 
-#grid.text(c(expression(bold("A")),expression(bold("B")),expression(bold("C")),expression(bold("D"))), y = unit(c(.965,.965,.965,.47), "npc"), x = unit(c(0.03,0.35,0.64,0.64), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=24)) 
-grid.text(c("Comparison","Reference","Comparison","Reference"), x = unit(c(0.685,0.685,.675,.675), "npc"), y = unit(c(.97,.935,.6,.57), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=12)) 
-grid.text(c(expression(bold("A")),expression(bold("B")),expression(bold("C")),expression(bold("D")),expression(bold("E")),expression(bold("F"))), x = unit(c(0.014, 0.35, 0.014, 0.62,0.62,0.62), "npc"), y = unit(c(.965,.965,0.25,.965,0.6,.35), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=24)) 
-# dev.off()
+grid.text(c("Comparison","Reference"), x = unit(c(.32,.32), "npc"), y = unit(c(.38, .45), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=12)) 
+grid.text(c(expression(bold("A")),expression(bold("B")),expression(bold("C")),expression(bold("D"))), x = unit(c(0.014, 0.31, .31, .58), "npc"), y = unit(c(.965,.965,.5,.965), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=24))
+#dev.off()
+
+
+
+
+```
+
+## Figure S7
+```{r, warning=F, message=F}
+i=2.1
+tagsize=24
+smallsize = 16
+
+plot_this_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=2,byrow=TRUE)))
+
+plot_this_legend <- g_legend(ec2021 + theme(legend.position = "bottom", legend.text = element_text(size = 12), legend.title = element_blank()) + guides(fill=guide_legend(ncol=2,byrow=F)) + scale_fill_manual(name = "", values = c("black",predefined_colors[-c(1,2,4,12)]), labels = c("other", bquote(italic(Pasteurellales)), bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillales)), bquote(italic(Lactobacillaceae)), bquote(italic(Enterococcus)), bquote(italic(Leuconostoc)), bquote(italic(Weissella)), bquote(italic(Lactobacillus)), bquote(italic(Acetobacteraceae)), bquote(italic(Commensalibacter)), bquote(italic(Gluconobacter)), bquote(italic(Komagataeibacter)), bquote(italic(Acetobacter)))))
+
+#jpeg(h=7*i, w=6*i, "figure_sufs_april2025.jpg", units = "in", res=300)
+grid.arrange(fruit_map,
+             plot_this_legend,
+             ggplot(labs2 %>% mutate(xval = c(1)) %>% mutate(yval = (81-c(7,20,32.5,47,59,69.5,78,81))), aes(x = xval, y = yval, shape = location)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme_void() +  theme(legend.position = "none", axis.title.y = element_text(size = smallsize, face = "bold", angle = 90),plot.tag = element_text(size = tagsize, face = "bold")) +   xlim(c(0.88,1.12)) + ylim(c(-4,84)) + labs(y = "Site", tag = "B"),
+             quartet_taxon_plot + theme(axis.title.y = element_blank()) + theme(strip.text.x = element_text(face = "bold"), axis.title = element_text(face = "bold")),
+             compost_plot + theme(axis.title = element_text(face = "bold")) + labs(x = NULL) + coord_flip(),
+             ggplot(labs2 %>% filter(Geography %in% c("E","H","L")) %>% mutate(xval = c(1)) %>% mutate(yval = (81-c(9,(81/7*3),63))), aes(x = xval, y = yval, shape = location)) +   geom_point(size = 2) + scale_shape_identity() +   theme_cowplot() + theme_void() +  theme(legend.position = "none", axis.title.y = element_text(face = "bold", angle = 90, size = smallsize))+   xlim(c(0.88,1.12)) + ylim(c(-4,84)) + labs(y = "Site"),
+             ggplot() + theme_void() + theme(plot.tag = element_text(size = tagsize, face = "bold")) + labs(tag = "D"),
+             ggplot() + theme_void() + theme(plot.tag = element_text(size = tagsize, face = "bold")) + labs(tag = "A"),
+                          ggplot() + theme_void() + theme(plot.tag = element_text(size = tagsize, face = "bold")) + labs(tag = "C"),
+
+             distance_plot_sufs + labs(x = "Comparison groups"),
+             widths = c(0.1,0.1,0.6,0.3,.1,1),
+             heights = c(3,1,.5,.5,1.4,3,3),
+             layout_matrix=rbind(		
+                c(8,1,1,1,3,4),
+                c(NA,1,1,1,3,4),
+                c(NA,NA,2,NA,3,4),
+                c(NA,NA,2,NA,3,4),
+                c(NA,NA,2,NA,3,4),
+                c(9,10,10,10,3,4),
+                c(7,6,5,5,3,4)
+             )
+             ) 
+grid.text(c("Comparison","Reference"), x = unit(c(.086,.086), "npc"), y = unit(c(.435,.465), "npc"), hjust = 1, vjust = 0.5,gp=gpar(fontsize=12)) 
+
+#dev.off()
 
 
 ```
@@ -2143,8 +2754,9 @@ wget -O taxonomy-eastcoast/taxonomy_forR.csv https://raw.githubusercontent.com/j
 pwd
 ```
 
-### Table S5 (Permanova)
+### Table S6 (Permanova)
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "lymanfruits"
 mapper_file <- "~/Dropbox/sequencing/2022-08-ECrun1and2/mapper_1and2_WendyJMC.tsv"
 
@@ -2166,6 +2778,7 @@ make_permanova_tables(file_path = file_path, mapper_file = mapper_file, flies_un
 
 ### taxon plot
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 file_path <- "lymanfruits"
 mapper_file <- "mapper_1and2_WendyJMC.tsv"
 map_path = "-eastcoast" # taxonomy folder extension
@@ -2201,9 +2814,125 @@ wild_fruits <- base_plot +
   labs(x = "Sample") + 
   theme(strip.text = ggtext::element_markdown())
 wild_fruits
-wf_legend <- g_legend(wild_fruits + theme(legend.position = "bottom", legend.title = element_blank()) + guides(fill=guide_legend(ncol=3,byrow=F))+ theme(legend.text = element_text(size = 18)) + scale_fill_manual(name = "J", values = c("black","black","lightgreen","darkgreen","blue4","purple4","purple1","lavender","blue","pink","yellow","orange","magenta","red"), labels = c("other",bquote(italic(Dysgonomonas)),bquote(italic(Pasteurellales)),bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillaceae)),bquote(italic(Enterococcus)),bquote(italic(Leuconostoc)),bquote(italic(Weissella)),bquote(italic(Lactobacillus)),bquote(italic(Acetobacteraceae)),bquote(italic(Commensalibacter)),bquote(italic(Gluconobacter)),bquote(italic(Komagataeibacter)),bquote(italic(Acetobacter)))))
+wf_legend <- g_legend(wild_fruits + theme(legend.position = "bottom", legend.title = element_blank()) + guides(fill=guide_legend(ncol=2,byrow=F))+ theme(legend.text = element_text(size = 18)) + scale_fill_manual(name = "J", values = c("black","black","lightgreen","darkgreen","blue4","purple4","purple1","lavender","blue","pink","yellow","orange","magenta","red"), labels = c("other",bquote(italic(Dysgonomonas)),bquote(italic(Pasteurellales)),bquote(italic(Enterobacteriaceae)),bquote(italic(Lactobacillaceae)),bquote(italic(Enterococcus)),bquote(italic(Leuconostoc)),bquote(italic(Weissella)),bquote(italic(Lactobacillus)),bquote(italic(Acetobacteraceae)),bquote(italic(Commensalibacter)),bquote(italic(Gluconobacter)),bquote(italic(Komagataeibacter)),bquote(italic(Acetobacter)))))
 plot(wf_legend)
+
+  taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+
 ```
+
+## pcoA plots
+```{r}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
+file_path <- "lymanfruits"
+mapper_file <- "mapper_1and2_WendyJMC.tsv"
+
+plotvarnames = c("plotorder","orchard_subsite","site","ospo") 
+  ## plot by cornstage only
+shape_var = "fn"
+color_var = "fruittype"
+fill_var = "fruittype"
+circle_var = "fruittype"
+linetype_var = "fruittype"
+plot_shapes <- c(rep(15,10))
+plot_fills <- c("magenta","grey","black")
+plot_colors <- c("magenta","grey","black")
+plot_ellipses <- rep(c("solid","solid","solid","solid","solid","solid"),2)
+i="weighted_unifrac"
+for (i in c("unweighted_unifrac","weighted_unifrac","bray_curtis")) {
+  if (i == "unweighted_unifrac") {title_name_add <- "Unweighted Unifrac"
+  } else if (i == "weighted_unifrac") {title_name_add <- "Weighted Unifrac"
+  } else if (i == "bray_curtis") {title_name_add <- "Bray Curtis"
+  }
+  legend_position = "none"
+  folder_name = paste0(file_path,"/",i)
+  assign(paste0("pcoag_cornstageonly_",i), pcoa_manyvar_solidlineplot(folder_name=folder_name, mapper_file = mapper_file, title_name_add=title_name_add, legend_position = legend_position, shape_var = shape_var, color_var = color_var, fill_var = fill_var, circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, pco1 =1, pco2=2))
+}
+
+pcoag_cornstageonly_unweighted_unifrac
+pcoag_cornstageonly_weighted_unifrac + theme(legend.position = "bottom")
+bc_lyman_flies <- pcoag_cornstageonly_bray_curtis + theme(legend.position = "none")
+bc_lyman_flies
+
+#magenta = apple
+#grey = peach
+#black = pear
+
+circle_color = "black"
+pco1 = 1
+pco2 = 2
+legend_name = NULL
+legend_label = NULL
+#pcoa_manyvar_solidlineplot <- function(folder_name = folder_name, mapper_file = mapper_file, title_name_add = title_name_add, legend_position = legend_position,pco1=1,pco2=2,shape_var = shape_var,color_var = color_var,fill_var = fill_var,circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, circle_color = "black", legend_name = NULL, legend_label = NULL) {
+  
+  varnames = c(shape_var, color_var, fill_var, circle_var,linetype_var)
+  varnames <- varnames[!duplicated(varnames)]
+  	wfpc <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt',sep=""), sep="\t", fill=T, skip = 9,blank.lines.skip = T, header=F),-2)
+	pc2 <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt', sep = ""), sep="\t", fill=T, skip = 3, header=F, colClasses = "character"),2)
+	pc_values <- as.numeric(as.character(pc2[2,]))*100
+
+		wfpc <- wfpc[,c(1,pco1+1, pco2+1)] 
+	
+	fut2 <- read.table(paste('core-metrics-results-',folder_name,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t", stringsAsFactors = T) %>% 
+	  dplyr::select(X) %>% 
+	  mutate(X=as.character(X)) %>% 
+	  left_join(read.table(paste0(mapper_file),comment.char = "", header=T, sep="\t") %>% dplyr::select(all_of(varnames),X.SampleID), by=c("X"="X.SampleID"))
+	
+	uwmpc_all <- wfpc %>% 
+	  inner_join(fut2, by=c("V1"="X")) %>%
+	  mutate(shape_var = as.factor(as.character(get(shape_var))),
+	         color_var = as.factor(as.character(get(color_var))),
+	         circle_var = as.factor(as.character(get(circle_var))),
+	         fill_var = as.factor(as.character(get(fill_var))),
+	         linetype_var = as.factor(as.character(get(linetype_var)))
+	  ) %>% droplevels()
+	
+	shape_table <- table(list(uwmpc_all[,shape_var]))
+	fill_table <- table(list(uwmpc_all[,fill_var]))
+	color_table <- table(list(uwmpc_all[,color_var]))
+	circle_table <- table(list(uwmpc_all[,circle_var]))
+	linetype_table <- table(list(uwmpc_all[,linetype_var]))
+	
+	uwmpc_all$axis1 <- round(uwmpc_all[,paste0("V",pco1+1)],10)
+	uwmpc_all$axis2 <- round(uwmpc_all[,paste0("V",pco2+1)],10)
+	
+	if(is.null(legend_name)){
+	  legend_name = c(color_var, fill_var, shape_var, linetype_var)
+	}
+	
+	if(is.null(legend_label)){
+	  legend_label = list(colors = names(color_table)[color_table!=0], fills = names(fill_table)[fill_table!=0], shapes = names(shape_table)[shape_table!=0], linetypes = names(linetype_table)[linetype_table!=0])
+	}
+	
+	
+bc_lyman_fruits <- ggplot(uwmpc_all, aes(x = axis1, y = axis2, colour=fruittype, shape=fruittype, fill=fruittype, lty = fruittype)) + 
+		geom_point(alpha = 1, size=6, alpha = 0.5, color = "black") + #, shape=plot_shapes, size=3, col=plot_colors) + 
+		scale_color_manual(name=NULL, labels=c("Apple","Peach","Pear"), values=c("yellow","green","blue")) + 
+		scale_fill_manual(name=NULL, labels=c("Apple","Peach","Pear"), values=c("yellow","green","blue")) + 
+		scale_shape_manual(name=NULL,labels=c("Apple","Peach","Pear"), values=rep(21,10)) + 
+#	 scale_linetype_manual(name=legend_name[4],labels=legend_label[[4]], values=plot_ellipses) +
+	  #		scale_fill_manual(name="Legend", values=c("red","black","white")) +
+		theme(panel.background = element_blank(), 
+					axis.line = element_line(), 
+					axis.ticks=element_blank(), 
+					axis.title=element_text(size=14),	
+					#           title=element_text(size=16),
+					legend.position="none",
+					plot.title = element_text(size=16, hjust=0),
+					axis.text = element_blank(),
+					legend.text = element_text(size = 18)) +
+		labs(x = paste("PCo",pco1," ( ",round(as.numeric(pc_values[pco1]),1),"% )",sep=""), 
+				 y = paste("PCo",pco2," ( ",round(as.numeric(pc_values[pco2]),1),"% )",sep=""), 
+				 title = NULL) +
+#  guides(fill=guide_legend(ncol=4,byrow=F), color=guide_legend(ncol=4,byrow=F), shape=guide_legend(ncol=4,byrow=F)) +
+  stat_ellipse(aes(x = axis1, y = axis2, group= fruittype, linetype = "solid"), show.legend = F, type = "t", geom = "polygon", level = 0.7, alpha = 0, inherit.aes=T, lty = 1) 
+
+
+```
+
 
 ### ancom - no differences with fruittype or subsite
 ```{r, warning=F, message=F}
@@ -2274,7 +3003,7 @@ wget https://raw.githubusercontent.com/johnchaston/Gale2024/main/mapper.tsv
 pwd
 ```
 
-### Table S6 (permanova)
+### Table S7 (permanova)
 ```{r, warning=F, message=F}
 file_path <- "gflies"
 mapper_file <- "mapper.tsv"
@@ -2368,8 +3097,135 @@ fv_taxonplot <- fv_taxonplot_baseplot +
   facet_grid(NULL)
 fv_taxonplot  
 
-fv_legend <- g_legend(fv_taxonplot_baseplot + theme(legend.position = "bottom") + guides(fill=guide_legend(ncol=3,byrow=F)) + scale_fill_manual(name = "   ", values = plot_color, labels = c("other",bquote(italic("B. subtilis")),bquote(italic("Pantoea")~"sp. JGM106"),bquote(italic("Pantoea")~"sp. JGM49"),bquote(italic("P. rettgeri")),bquote(italic("E. coli")),bquote(italic("W. paramesenteroides")),bquote(italic("L. plantarum")),bquote(italic("L. brevis")),bquote(italic("G. cerinus")),bquote(italic("K. medellinensis")),bquote(italic("A. pomorum")),bquote(italic("A. tropicalis")))) + theme(legend.text = element_text(size = 18)))
+fv_legend <- g_legend(fv_taxonplot_baseplot + theme(legend.position = "bottom") + guides(fill=guide_legend(ncol=2,byrow=F)) + scale_fill_manual(name = "   ", values = plot_color, labels = c("other",bquote(italic("B. subtilis")),bquote(italic("Pantoea")~"sp. JGM106"),bquote(italic("Pantoea")~"sp. JGM49"),bquote(italic("P. rettgeri")),bquote(italic("E. coli")),bquote(italic("W. paramesenteroides")),bquote(italic("L. plantarum")),bquote(italic("L. brevis")),bquote(italic("G. cerinus")),bquote(italic("K. medellinensis")),bquote(italic("A. pomorum")),bquote(italic("A. tropicalis")))) + theme(legend.text = element_text(size = 18)))
 plot(fv_legend)
+
+  taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+
+```
+
+## pcoA plots
+```{r}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
+
+map_path = "-fv2" # taxonomy folder extension
+plotvarnames = c("FruitGuess") 
+
+file_path <- "gflies"
+mapper_file <- "mapper.tsv"
+
+
+
+plotvarnames = c("plotorder","orchard_subsite","site","ospo") 
+  ## plot by cornstage only
+shape_var = "FruitGuess"
+color_var = "FruitGuess"
+fill_var = "FruitGuess"
+circle_var = "FruitGuess"
+linetype_var = "FruitGuess"
+plot_shapes <- c(rep(16,10))
+plot_fills <- c("yellow","orange","black","red","grey","magenta","cyan","green","blue","purple") # c(rep("black",10))
+plot_colors <- c("yellow","orange","black","red","grey","magenta","cyan","green","blue","purple") #c(rep("black",10))
+plot_ellipses <- rep(c(NULL,NULL,NULL,NULL,NULL,NULL),2)
+i="weighted_unifrac"
+for (i in c("unweighted_unifrac","weighted_unifrac","bray_curtis")) {
+  if (i == "unweighted_unifrac") {title_name_add <- "Unweighted Unifrac"
+  } else if (i == "weighted_unifrac") {title_name_add <- "Weighted Unifrac"
+  } else if (i == "bray_curtis") {title_name_add <- "Bray Curtis"
+  }
+  legend_position = "none"
+  folder_name = paste0(file_path,"/",i)
+  assign(paste0("pcoag_cornstageonly_",i), pcoa_manyvar_solidlineplot(folder_name=folder_name, mapper_file = mapper_file, title_name_add=title_name_add, legend_position = legend_position, shape_var = shape_var, color_var = color_var, fill_var = fill_var, circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = NULL, pco1 =1, pco2=2))
+}
+
+bc_lyman_flies <- pcoag_cornstageonly_bray_curtis + theme(legend.position = "none") + geom_point(size = 4)
+bc_lyman_flies
+
+circle_color = "black"
+pco1 = 1
+pco2 = 2
+legend_name = NULL
+legend_label = NULL
+#pcoa_manyvar_solidlineplot <- function(folder_name = folder_name, mapper_file = mapper_file, title_name_add = title_name_add, legend_position = legend_position,pco1=1,pco2=2,shape_var = shape_var,color_var = color_var,fill_var = fill_var,circle_var = circle_var, linetype_var = linetype_var, plot_shapes = plot_shapes, plot_fills = plot_fills, plot_colors = plot_colors, plot_ellipses = plot_ellipses, circle_color = "black", legend_name = NULL, legend_label = NULL) {
+  
+  varnames = c(shape_var, color_var, fill_var, circle_var,linetype_var)
+  varnames <- varnames[!duplicated(varnames)]
+  	wfpc <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt',sep=""), sep="\t", fill=T, skip = 9,blank.lines.skip = T, header=F),-2)
+	pc2 <- head(read.table(paste('core-metrics-results-',folder_name,'_pcoa_results/ordination.txt', sep = ""), sep="\t", fill=T, skip = 3, header=F, colClasses = "character"),2)
+	pc_values <- as.numeric(as.character(pc2[2,]))*100
+
+		wfpc <- wfpc[,c(1,pco1+1, pco2+1)] 
+	
+	fut2 <- read.table(paste('core-metrics-results-',folder_name,'_distance_matrix/distance-matrix.tsv',sep=""), header=T, sep="\t", stringsAsFactors = T) %>% 
+	  dplyr::select(X) %>% 
+	  mutate(X=as.character(X)) %>% 
+	  left_join(read.table(paste0(mapper_file),comment.char = "", header=T, sep="\t") %>% dplyr::select(all_of(varnames),X.SampleID), by=c("X"="X.SampleID"))
+	
+	uwmpc_all <- wfpc %>% 
+	  inner_join(fut2, by=c("V1"="X")) %>%
+	  mutate(shape_var = as.factor(as.character(get(shape_var))),
+	         color_var = as.factor(as.character(get(color_var))),
+	         circle_var = as.factor(as.character(get(circle_var))),
+	         fill_var = as.factor(as.character(get(fill_var))),
+	         linetype_var = as.factor(as.character(get(linetype_var)))
+	  ) %>% droplevels()
+	
+	shape_table <- table(list(uwmpc_all[,shape_var]))
+	fill_table <- table(list(uwmpc_all[,fill_var]))
+	color_table <- table(list(uwmpc_all[,color_var]))
+	circle_table <- table(list(uwmpc_all[,circle_var]))
+	linetype_table <- table(list(uwmpc_all[,linetype_var]))
+	
+	uwmpc_all$axis1 <- round(uwmpc_all[,paste0("V",pco1+1)],10)
+	uwmpc_all$axis2 <- round(uwmpc_all[,paste0("V",pco2+1)],10)
+	
+	if(is.null(legend_name)){
+	  legend_name = c(color_var, fill_var, shape_var, linetype_var)
+	}
+	
+	if(is.null(legend_label)){
+	  legend_label = list(colors = names(color_table)[color_table!=0], fills = names(fill_table)[fill_table!=0], shapes = names(shape_table)[shape_table!=0], linetypes = names(linetype_table)[linetype_table!=0])
+	}
+	
+	uwmpc_all$FruitGuess <-  factor(uwmpc_all$FruitGuess, levels = c("FJ","BA","CA","CO","LI","MA","OR","PR","RP","SP"))
+
+	uwmpc_all$FruitGuess <-  factor(uwmpc_all$FruitGuess, labels = c("Apple","Banana","Carrot","Corn","Lime","Mango","Orange","Pear","Peach","Spaghetti\nsquash"))
+	
+bc_lyman_flies <- ggplot(uwmpc_all, aes(x = axis1, y = axis2, colour=FruitGuess, shape=FruitGuess, fill=FruitGuess, lty = FruitGuess)) + 
+		geom_point(alpha = 1, size=6, alpha = 0.5, color = "black") + #, shape=plot_shapes, size=3, col=plot_colors) + 
+		scale_color_manual(name=NULL, labels=c("Apple","Banana","Carrot","Corn","Lime","Mango","Orange","Pear","Peach","Spaghetti\nsquash"), values=plot_colors) + 
+		scale_fill_manual(name=NULL, labels=c("Apple","Banana","Carrot","Corn","Lime","Mango","Orange","Pear","Peach","Spaghetti\nsquash"), values=plot_fills) + 
+		scale_shape_manual(name=NULL,labels=c("Apple","Banana","Carrot","Corn","Lime","Mango","Orange","Pear","Peach","Spaghetti\nsquash"), values=rep(21,10)) + 
+#	 scale_linetype_manual(name=legend_name[4],labels=legend_label[[4]], values=plot_ellipses) +
+	  #		scale_fill_manual(name="Legend", values=c("red","black","white")) +
+		theme(panel.background = element_blank(), 
+					axis.line = element_line(), 
+					axis.ticks=element_blank(), 
+					axis.title=element_text(size=14),	
+					#           title=element_text(size=16),
+					legend.position="right",
+					plot.title = element_text(size=16, hjust=0),
+					axis.text = element_blank(),
+					legend.text = element_text(size = 18)) +
+		labs(x = paste("PCo",pco1," ( ",round(as.numeric(pc_values[pco1]),1),"% )",sep=""), 
+				 y = paste("PCo",pco2," ( ",round(as.numeric(pc_values[pco2]),1),"% )",sep=""), 
+				 title = NULL) +
+#  guides(fill=guide_legend(ncol=4,byrow=F), color=guide_legend(ncol=4,byrow=F), shape=guide_legend(ncol=4,byrow=F)) +
+  stat_ellipse(aes(x = axis1, y = axis2, group= FruitGuess, linetype = "solid"), show.legend = F, type = "t", geom = "polygon", level = 0.7, alpha = 0, inherit.aes=T, lty = 1) 
+
+
+fruits_legend <- g_legend(bc_lyman_flies)
+plot(fruits_legend)
+
+#magenta = apple
+#grey = peach
+#black = pear
+
+
+
 ```
 
 ### ANCOM
@@ -2401,7 +3257,7 @@ for (i in "X.OTU.ID") {
 }
 ```
 
-## overall figure
+## Figure 3
 ```{r, warning=F, message=F}
 i=1.7
 tagsize=40
@@ -2412,24 +3268,32 @@ plot3 <- fv_taxonplot +theme(axis.text.x = element_text(size=smallsize, angle=35
 
 plot(wf_legend)
 i=1.6
-#jpeg(h=4*i*1.4, w=11*i, "dietsandLAB_july2024.jpg", units = "in", res=300)
-grid.arrange(plot1 + labs(tag = "A") + theme(plot.tag = element_text(size = tagsize, face = "bold")) + theme(axis.text.x = element_text(angle = 35, hjust=1, vjust=1)),
+#jpeg(h=4*i*1.4, w=13*i, "fig3_may2025.jpg", units = "in", res=300)
+grid.arrange(plot1 + labs(tag = "A") + theme(plot.tag = element_text(size = tagsize, face = "bold")) + theme(axis.text.x = element_text(angle = 35, hjust=1, vjust=1)) + labs(x = "Fruit"),
             ggplot() + theme_void(),
              plot3 + labs(tag = "B") + theme(plot.tag = element_text(size = tagsize, face = "bold")) + theme(axis.text.x = element_text(angle = 35, hjust=1, vjust=1)),
+             bc_lyman_fruits + labs(tag = "C") + theme(plot.tag = element_text(size = tagsize, face = "bold"), legend.position = "none", axis.title = element_text(size = 28, face = "bold")),
+                         bc_lyman_flies + labs(tag = "D") + theme(plot.tag = element_text(size = tagsize, face = "bold"), legend.position = "none", axis.title = element_text(size = 28, face = "bold")),
+
             wf_legend,
             ggplot() + theme_void(),
             fv_legend,
-             widths = c(2,.11,2),
-             heights = c(1.4,.4),
+            fruits_legend,
+             widths = c(2,.11,2,2,.4),
+             heights = c(1,.4,.6),
              layout_matrix=rbind(		
-                c(1,2,3),
-                c(4,5,6)
+                c(1,2,3,4,9),
+                c(1,2,3,5,9),
+                c(6,7,8,5,9)
 #                c(2,2,3,3,4,4)
              )
 )
 
 #dev.off()
+getwd()
+
 ```
+
 
 # Figure 4
 ## bash
@@ -2530,6 +3394,12 @@ legend_position = "none"
 lineartime_plot <- make_taxon_plot_condensed_numericX(ptp = ptp, plot_color = plot_color, facet_formula = facet_formula, sort_x_axis = sort_x_axis, x_cluster = x_cluster, plotvarnames = plotvarnames, legend_position = legend_position, read_depth = read_depth, plot_order = plot_order)
 lineartime_plot + xlim(c(0,70))
 
+  taxonomic_level="order"
+rpa_in_chart = .00001
+prep_taxon_plot(file_path = file_path, map_path = map_path, plotvarnames = plotvarnames, mapper_file = mapper_file, taxonomic_level=taxonomic_level, rpa_in_chart = rpa_in_chart, read_depth = read_depth, legend_position=legend_position,  sort_x_axis = sort_x_axis,  x_cluster = x_cluster, predefined_taxa = predefined_taxa, predefined_shortname = predefined_shortname)[[3]] %>% filter(Var1 == "k__Bacteria_ p__Firmicutes_ c__Bacilli_ o__Lactobacillales") %>% dplyr::pull(perc)
+
+
+
 ```
 
 ## timeline plots
@@ -2601,7 +3471,7 @@ joepiles_gantt2 <- ggplot(t42, aes(x=wa, ymin = 0, ymax = end_date-start_date, c
 joepiles_gantt2
 ```
 
-## figure SX - mantel tests
+## figure S8 - mantel tests
 ```{r, warning=F, message=F}
 file_path <- "allbutS"
 mapper_file <- "joe_mapper.tsv"
@@ -2838,7 +3708,7 @@ peachtime_cortest_glucono <- make_abundance_plot(file_path, map_path=map_path, m
 cor.test(peachtime_cortest_glucono$Group, peachtime_cortest_glucono$mean, method = "spearman")
 ```
 
-### overall figure
+### Figure 4
 ```{r, warning=F, message=F}
 file_path <- "allbutS"
 mapper_file <- "joe_mapper.tsv"
@@ -2866,24 +3736,24 @@ plot_legend_lineartime <- g_legend(ec2021 + theme(legend.position = "bottom", le
 
 
 
-#jpeg(h=8*1.1*i, w=8*i, "figure_joepiles_july2024.jpg", units = "in", res=300)
-grid.arrange(time_plot + labs(x = "Time from pile start (d)", tag = "H", y = "Fractional abundance") + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.text.x = element_text(size = smallsize), axis.text.y = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold")) + theme(axis.text.x = element_blank(), axis.title.x = element_blank()),
-             lineartime_plot + labs(x = "Time from experimental start (d)", tag = "A", y = "Fractional abundance") + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.text.y = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold"), axis.text.x = element_blank(), axis.title.x = element_blank()) + xlim(c(0,67)),
+jpeg(h=8*1.3*i, w=8*i*1.05, "figure_joepiles_april2025.jpg", units = "in", res=300)
+grid.arrange(time_plot + labs(x = "Time from pile start (d)", tag = "H", y = "Fractional abundance", title = "Time (pile start date)") + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.text.x = element_text(size = smallsize), axis.text.y = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold")) + theme(axis.text.x = element_blank(), axis.title.x = element_blank()),
+             lineartime_plot + labs(x = "Time from experimental start (d)", tag = "A", y = "Fractional abundance", title = "Time (calendar date)") + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.text.y = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold"), axis.text.x = element_blank(), axis.title.x = element_blank()) + xlim(c(0,67)),
              time_WUmantel + labs(tag = "I", y = "Microbiota distance\n(weighted Unifrac)", x = "Difference in time (d)") + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.text = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold")), 
              lineartime_WUmantel + labs(tag = "B",y = "Microbiota distance\n(weighted Unifrac)", x = "Difference in time (d)") + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.text = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold")),
-             lineartime_ancom_glucono  + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.4, hjust=0, label = paste0("S = ",unname(round(pc_label$estimate,2)),"\np =  ", unname(round(pc_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.title.y = element_text(size = smallsize*.9, face = "bold"))+ labs(tag = "C", title = NULL, y = "Fractional abundance", x = "Time (d)") + geom_col(fill = "orange"),
-             lineartime_ancom_entero + labs(tag = "D", title = NULL, x = "Time (d)") + theme(axis.title = element_blank(), axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 60, y = 0.32, hjust=1,  label = paste0("S = ",unname(round(pd_label$estimate,2)),"\np =  ", unname(round(pd_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL)+ geom_col(fill = "darkgreen"),
-             peachlineartime_ancom_glucono + labs(tag = "F", title = NULL, x = "Time (d)") + theme(axis.title = element_blank(), axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.5, hjust=0,  label = paste0("S = ",unname(round(pf_label$estimate,2)),"\np = ", unname(round(pf_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
-             time_ancom_glucono + labs(tag = "J", title = NULL, y = "Fractional abundance", x = "Time (d)") + theme(axis.text.x = element_text(size = smallsize), axis.title.x = element_text(size = smallsize, face = "bold"), axis.title.y = element_text(size = smallsize*0.9, face = "bold"))+ geom_col(fill = "orange") + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text",x = 5, y = 0.5, hjust=0, label = paste0("S = ",unname(round(pj_label$estimate,2)),"\np = ", unname(round(pj_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
-             time_ancom_entero + labs(tag = "K", title = NULL, x= "Time (d)") + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.title.y = element_blank(), axis.text = element_text(size = smallsize))+ geom_col(fill = "darkgreen") + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 60, y = 0.4, hjust=1,  label = paste0("S = ",unname(round(pk_label$estimate,2)),"\np = ", unname(round(pk_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
-             peachtime_ancom_glucono + labs(tag = "M", title = NULL, x = "Time (d)") + theme(axis.title.y = element_blank(), axis.title.x = element_text(size = smallsize, face = "bold"), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + stat_smooth(method = "lm", alpha = alphaval, color = "black") + ggplot2::annotate(geom = "text", x = 5, y = 0.66, hjust=0, label = paste0("S = ",unname(round(pm_label$estimate,2)),"\np =  ", unname(round(pm_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL) + xlim(c(0,70)) + ylim(c(-0.1,.78)),
+             lineartime_ancom_glucono  + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.4, hjust=0, label = paste0("S = ",unname(round(pc_label$estimate,2)),"\np =  ", unname(round(pc_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.title.y = element_text(size = smallsize*.9, face = "bold"))+ labs(tag = "C", title = "Gluconobacter", y = "Fractional abundance", x = "Time (d)") + geom_col(fill = "orange") + theme(plot.title = element_text(face = "bold")),
+             lineartime_ancom_entero + labs(tag = "D", title = "Enterobacteriaceae", x = "Time (d)") + theme(axis.title = element_blank(), axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 60, y = 0.32, hjust=1,  label = paste0("S = ",unname(round(pd_label$estimate,2)),"\np =  ", unname(round(pd_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL)+ geom_col(fill = "darkgreen")+ theme(plot.title = element_text(face = "bold")),
+             peachlineartime_ancom_glucono + labs(tag = "F", title = "Gluconobacter", x = "Time (d)") + theme(axis.title = element_blank(), axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.5, hjust=0,  label = paste0("S = ",unname(round(pf_label$estimate,2)),"\np = ", unname(round(pf_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
+             time_ancom_glucono + labs(tag = "J", title = "Gluconobacter", y = "Fractional abundance", x = "Time (d)") + theme(axis.text.x = element_text(size = smallsize), axis.title.x = element_text(size = smallsize, face = "bold"), axis.title.y = element_text(size = smallsize*0.9, face = "bold"))+ geom_col(fill = "orange") + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text",x = 5, y = 0.5, hjust=0, label = paste0("S = ",unname(round(pj_label$estimate,2)),"\np = ", unname(round(pj_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL)+ theme(plot.title = element_text(face = "bold")),
+             time_ancom_entero + labs(tag = "K", title = "Enterobacteriaceae", x= "Time (d)") + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.title.y = element_blank(), axis.text = element_text(size = smallsize))+ geom_col(fill = "darkgreen") + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 60, y = 0.4, hjust=1,  label = paste0("S = ",unname(round(pk_label$estimate,2)),"\np = ", unname(round(pk_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL)+ theme(plot.title = element_text(face = "bold")),
+             peachtime_ancom_glucono + labs(tag = "M", title = "Gluconobacter", x = "Time (d)") + theme(axis.title.y = element_blank(), axis.title.x = element_text(size = smallsize, face = "bold"), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + stat_smooth(method = "lm", alpha = alphaval, color = "black") + ggplot2::annotate(geom = "text", x = 5, y = 0.66, hjust=0, label = paste0("S = ",unname(round(pm_label$estimate,2)),"\np =  ", unname(round(pm_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL) + xlim(c(0,70)) + ylim(c(-0.1,.78)),
              joepiles_gantt + labs(tag = "B") + theme(axis.text.x = element_text(size = smallsize), axis.text.y = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold"), plot.tag = element_text(size = tagsize, face = "bold", color = "white")),
              joepiles_gantt2 + labs(tag = "H", y = "Time from pile start (d)") + theme(axis.text.x = element_text(size = smallsize), axis.text.y = element_text(size = smallsize), axis.title = element_text(size = smallsize, face = "bold"), plot.tag = element_text(size = tagsize, face = "bold", color = "white")),
               plot_legend_lineartime,
-             peachlineartime_ancom_lacto + labs(tag = "G", title = NULL, x = "Time (d)") + theme(axis.title = element_blank(), axis.title.x = element_text(face = "bold"), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.07, hjust=0,  label = paste0("S = ",unname(round(pg_label$estimate,2)),"\np = ", unname(round(pg_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
-             peachtime_ancom_lacto + labs(tag = "N", title = NULL, x = "Time (d)") + theme(axis.title.y = element_blank(), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0), axis.title.x = element_text(face= "bold", size = smallsize)) + xlim(c(0,70)) + ylim(c(-0.02,.18)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.15, hjust=0,  label = paste0("S = ",unname(round(pn_label$estimate,2)),"\np = ", unname(round(pn_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
-             lineartime_ancom_leuconostoc + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 65, y = 0.18, hjust=1, label = paste0("S = ",unname(round(pe_label$estimate,2)),"\np =  ", unname(round(pe_label$p.value,3))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.title.y = element_blank())+ labs(tag = "E", title = NULL, x = "Time (d)") + geom_col(fill = "purple1"),
-             time_ancom_leuconostoc + labs(tag = "L", title = NULL, x= "Time (d)") + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.title.y = element_blank(), axis.text = element_text(size = smallsize))+ geom_col(fill = "purple1") + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 60, y = 0.1, hjust=1,  label = paste0("S = ",unname(round(pl_label$estimate,2)),"\np = ", unname(round(pl_label$p.value,5))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
+             peachlineartime_ancom_lacto + labs(tag = "G", title = "Lactobacillus", x = "Time (d)") + theme(axis.title = element_blank(), axis.title.x = element_text(face = "bold"), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.07, hjust=0,  label = paste0("S = ",unname(round(pg_label$estimate,2)),"\np = ", unname(round(pg_label$p.value,2))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
+             peachtime_ancom_lacto + labs(tag = "N", title = "Lactobacillus", x = "Time (d)") + theme(axis.title.y = element_blank(), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0), axis.title.x = element_text(face= "bold", size = smallsize)) + xlim(c(0,70)) + ylim(c(-0.02,.18)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 5, y = 0.15, hjust=0,  label = paste0("S = ",unname(round(pn_label$estimate,2)),"\np = ", unname(round(pn_label$p.value,4))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL),
+             lineartime_ancom_leuconostoc + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.text.y = element_text(size = smallsize), axis.text.x = element_text(size = smallsize, angle=0)) + xlim(c(0,70)) + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 65, y = 0.18, hjust=1, label = paste0("S = ",unname(round(pe_label$estimate,2)),"\np =  ", unname(round(pe_label$p.value,3))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL, axis.title.y = element_blank())+ labs(tag = "E", title = "Leuconostoc", x = "Time (d)") + geom_col(fill = "purple1")+ theme(plot.title = element_text(face = "bold")),
+             time_ancom_leuconostoc + labs(tag = "L", title = "Leuconostoc", x= "Time (d)") + theme(axis.title.x = element_text(face = "bold", size = smallsize), axis.title.y = element_blank(), axis.text = element_text(size = smallsize))+ geom_col(fill = "purple1") + stat_smooth(method = "lm", alpha = alphaval, color = "black")+ ggplot2::annotate(geom = "text", x = 60, y = 0.1, hjust=1,  label = paste0("S = ",unname(round(pl_label$estimate,2)),"\np = ", unname(round(pl_label$p.value,5))), size = annotationsize) + theme(plot.tag = element_text(size = tagsize, face = "bold"), plot.tag.position = NULL)+ theme(plot.title = element_text(face = "bold")),
 
 
              widths = c(1,1,1,1,1,1,1,1,1,1,1,1,1,1,1),
@@ -2904,15 +3774,15 @@ grid.arrange(time_plot + labs(x = "Time from pile start (d)", tag = "H", y = "Fr
 c(rep(14,15))
                 )
 )
-#dev.off()
+dev.off()
 
 
 ```
 
-
 # Figure 5
 # Development panel B
 ```{r, warning=F, message=F}
+#setwd('~/Dropbox/Administrative/Meetings/2025-07-LAB/')
 
 dev_r1 <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/dev_r1.csv", show_col_types = F) %>% dplyr::select(-`...1`)
 
@@ -2948,6 +3818,35 @@ l1.1 <- glht(model_all, mcp(tt = "Tukey"))
 p_val1 <- try(summary(l1.1)$test$pvalues[1],T)
 cld(l1.1)
 
+
+dev3b <- dev3 %>%
+  group_by(location,trt) %>%
+  dplyr::summarize(mean = mean(variable), sem = sd(variable)/sqrt(dplyr::n())) %>%
+  ungroup()
+ggplot(dev3b %>% mutate(location = factor(location, levels = c("pile","top","entrance"), labels = c("square","triangle","circle"))), aes(x = location, y = mean)) + geom_pointrange(aes(ymin = mean-sem, ymax = mean+sem)) + theme_cowplot()
+
+dev3b <- dev3 %>%
+  group_by(trt) %>%
+  dplyr::summarize(mean = mean(variable), sem = sd(variable)/sqrt(dplyr::n())) %>%
+  ungroup()
+
+ggplot(dev3b %>% mutate(trt = factor(trt, levels = c("pile","fruit"), labels = c("compost","apple"))), aes(x = trt, y = mean)) + geom_pointrange(aes(ymin = mean-sem, ymax = mean+sem)) + theme_cowplot() + labs(x = "Substrate", y = "Development time (d)")
+ggsave(h=5, w=3, "Dev_piles.jpg")
+
+getwd()
+model_all <- coxme::coxme(S ~ location + (1|experiment),  data = dev3 %>% filter(treatment == "A") %>% mutate(location = factor(location, levels = c("pile","top","entrance"), labels = c("square","triangle","circle"))))
+summary(model_all)[[1]]
+l1.1 <- glht(model_all, mcp(location = "Tukey"))
+p_val1 <- try(summary(l1.1)$test$pvalues[1],T)
+cld(l1.1)
+
+model_all <- coxme::coxme(S ~ trt + (1|experiment),  data = dev3 %>% filter(treatment == "A") %>% mutate(trt = factor(trt)))
+anova(model_all)
+summary(model_all)[[1]]
+l1.1 <- glht(model_all, mcp(trt = "Tukey"))
+p_val1 <- try(summary(l1.1)$test$pvalues[1],T)
+cld(l1.1)
+
 #jpeg(width = 11.4, height = 10, filename = "round124_axvgn_manual.jpg", units = "in", res = 300)
 plot(survfit(S ~ tt, dev3),
   xlim=c(8.5,16.8), 
@@ -2959,52 +3858,9 @@ legend(x=12, y=.5, c("c  Apples - axenic","a  Compost - axenic","a  Apples - gno
 # dev.off()
 ```
 
-## Panel C
-```{r Dev data bacteria-free}
-
-dev <- readr::read_csv(file = "https://raw.githubusercontent.com/johnchaston/Gale2024/main/figure5c.csv", show_col_types = F, skip = 1) %>%
-  filter(acetoCFU!="#N/A" &toupper(vial)%in%c("MB6","MT6","MB6*","MB7","MB7*","MB8","MB8*","MB9*","MT6*","MT7","MT7*","MT8","MT8*","MT9*","MX6","MX6*","MX7","MX7*","MX8","MX8*","MX9*")==F) %>% mutate(vial = as.factor(vial), treatment = as.factor(treatment), cage = as.factor(cage), bacteria=as.factor(bacteria), exp= as.factor(exp), contam=as.factor(contam))
-
-	## filter based on density and contamination
-dev_filtered_bf <- dev %>% filter(density>25 & density <80 & contam=="noC" & bacteria=="bf" & treatment!="No_add") %>%  droplevels()
-
-	## number of vials per experiment per treatment
-dv2 <- dev_filtered_bf %>% group_by(treatment,vial, exp, cage) %>% dplyr::summarize(vial2=unique(vial)) %>% mutate(exp_geno = paste0(exp,cage)) %>% group_by(treatment,exp_geno, cage,exp) %>% dplyr::summarize(dplyr::n())
-	dv2a <- filter(dv2,exp=="A") %>% group_by(treatment) %>% dplyr::summarize(vialsum=sum(dplyr::n()))
-	dv2b <- filter(dv2,exp=="B") %>% group_by(treatment) %>% dplyr::summarize(vialsum=sum(dplyr::n()))
-	dv2c <- filter(dv2,exp=="C") %>% group_by(treatment) %>% dplyr::summarize(vialsum=sum(dplyr::n())) %>% full_join(dv2b,by="treatment")%>% full_join(dv2a, by="treatment") %>% dplyr::select(treatment,vialsum,vialsum.y,vialsum.x)
-colnames(dv2c) <- c("treatment","ExpA","ExpB","ExpC")
-dv2c
-	## number of flies per experiment per treatment
-dv2 <- dev_filtered_bf %>% group_by(treatment,vial, exp, cage) %>% mutate(exp_geno = paste0(exp,cage)) %>% group_by(treatment,exp_geno, cage,exp) %>% dplyr::summarize(dplyr::n())
-	dv2a <- filter(dv2,exp=="A") %>% group_by(treatment) %>% dplyr::summarize(vialsum=sum(`dplyr::n()`))
-	dv2b <- filter(dv2,exp=="B") %>% group_by(treatment) %>% dplyr::summarize(vialsum=sum(`dplyr::n()`))
-	dv2d <- filter(dv2,exp=="C") %>% group_by(treatment) %>% dplyr::summarize(vialsum=sum(`dplyr::n()`)) %>% full_join(dv2b,by="treatment")%>% full_join(dv2a, by="treatment") %>% dplyr::select(treatment,vialsum,vialsum.y,vialsum.x)
-colnames(dv2d) <- c("treatment","ExpA","ExpB","ExpC")
-print(dv2d)
-dv2d <- dv2d %>% rowwise %>% mutate(sum2 = sum(ExpA,ExpB,ExpC,na.rm=T)) %>% dplyr::select(sum2) %>% unlist() %>% unname()
-
-dev_filtered_bf$S <- Surv(dev_filtered_bf$time,dev_filtered_bf$event)  # create the response variable, a survival model
-
-dev_filtered_bf$treatment
-dev_bf_model <- coxph(S ~ treatment,dev_filtered_bf)
-survdiff(S ~ treatment, data = dev_filtered_bf)
-
-dev_bf <- coxme::coxme(S ~ treatment + (1|exp),  data = dev_filtered_bf)
-summary(dev_bf)
-dev_bf_model_glht <- glht(dev_bf, mcp(treatment = "Tukey"))
-dev_bf_model_cld <- cld(dev_bf_model_glht)
-dev_bf_model_cld
-anova(dev_bf_model)
-summary(dev_bf_model)
-
-	## make treatment-level survival plot
-sum(table(list(dev_filtered_bf$treatment)))
-bfs <- plot(survfit(S~treatment, dev_filtered_bf), lwd=3, col=c("black","black","black"), lty = c(1,2), xlim=c(10,16), xlab="time (d)", ylab="% eclosed", main="Bacteria free", fun=function(x) 1-x)
-legend(x=10, y=1, c("Rudman At-inoculated","Rudman Lb-inoculated"), col=c("black","black","black"), lty= c(1,2),lwd=3, bty = "n")
-```
-
+## Figure S9
 ```{r, warning=F, message=F}
+setwd('~/Dropbox/Working Trade-offs/Gale/sequence_results/')
 permanova_name = "conant"
 bc_analysis("conant_test1", paste0("cfu_mapper_",permanova_name,".tsv"), "~ Treatment * Sex + exp", permutations = 1000)
 bc_analysis("conant_test1", paste0("cfu_mapper_",permanova_name,".tsv"), "~ source/Treatment * Sex + exp", permutations = 1000)
@@ -3175,7 +4031,7 @@ lyman_ancomplot_ASV
 
 ```
 
-## overall figure
+## Figure S10
 ```{r, warning=F, message=F}
 
 getwd()
