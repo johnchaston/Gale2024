@@ -8,8 +8,8 @@ i="unweighted_unifrac"
   assign(x = paste0("flies_",i,"_dm"), value = as.dist(get(paste0("flies_",i))[,2:dim(get(paste0("flies_",i)))[2]]))
   flies_unifrac_table <- get(paste0("flies_",i)) %>% dplyr::select(X) %>% left_join(read.table(mapper_file,comment.char = "", header=T, fill=T, sep="\t", quote = '"'), by=c("X"="X.SampleID")) %>% droplevels()
   set.seed(seed_to_set)
-    if(byval == "margins") {
-  assign(x = paste0("f_",i,"_permanova"), adonis2(as.formula(paste0("flies_",i,"_dm ",pform)), flies_unifrac_table, permutations=1000, by = "margins"))
+    if(byval == "margin") {
+  assign(x = paste0("f_",i,"_permanova"), adonis2(as.formula(paste0("flies_",i,"_dm ",pform)), flies_unifrac_table, permutations=1000, by = "margin"))
       } else { 
   assign(x = paste0("f_",i,"_permanova"), adonis2(as.formula(paste0("flies_",i,"_dm ",pform)), flies_unifrac_table, permutations=1000, by = "terms"))
       }
