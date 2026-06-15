@@ -43,10 +43,10 @@ make_ancom2_plots <- function(file_path, map_path="", mapper_file=mapper_file, t
 
   if(is.null(var5)) {
     map2 <- read.table(mapper_file,comment.char = "", header=T, fill=T,sep="\t") %>% 
-      dplyr::select_(.dots = list(the_id,var1,var2,var3,var4, Group))
+      dplyr::select(all_of(c(the_id,var1,var2,var3,var4,var5,Group)))
   } else {
     map2 <- read.table(mapper_file,comment.char = "", header=T, fill=T,sep="\t") %>% 
-      dplyr::select_(.dots = list(the_id,var1,var2,var3,var4, var5,Group))
+      dplyr::select(all_of(c(the_id,var1,var2,var3,var4,var5,Group)))
   }
   #print(head(map2))
     
@@ -71,7 +71,7 @@ make_ancom2_plots <- function(file_path, map_path="", mapper_file=mapper_file, t
   map3 <- map2 %>% dplyr::select(Sample.ID, everything()) %>% dplyr::select(-X.SampleID) %>% filter(Sample.ID %in% phyl5$Sample.ID)
   colnames(map3)[1] <- "Sample.ID"
   
-  phyl4 <- phyl3 %>% inner_join(map2, by=c("Sample.ID")) %>% mutate(Group = get(Group)) %>% droplevels()#%>% dplyr::select_(.dots = list(col1drop, col2drop, paste0("-",var1))) %>% dplyr::select(-sample2)
+  phyl4 <- phyl3 %>% inner_join(map2, by=c("Sample.ID")) %>% mutate(Group = get(Group)) %>% droplevels()#%>% dplyr::select(.dots = list(col1drop, col2drop, paste0("-",var1))) %>% dplyr::select(-sample2)
   rm(comparison_test)
   
   if (taxonomic_level == "X.OTU.ID") {
@@ -202,6 +202,7 @@ make_ancom2_plots <- function(file_path, map_path="", mapper_file=mapper_file, t
     return(list(tablelist, datalist))
   }
 }
+
 
 
 make_abundance_plot <- function(file_path, map_path="", mapper_file=mapper_file, taxonomic_level=taxonomic_level,var1=var1,var2=var2,var3=var3, var4 = var4,var5 = NULL, newcol="newcol", the_id = "X.SampleID", main.var=main.var, adj.formula=adj.formula, repeat.var = repeat.var, multcorr=multcorr, sig=sig, prev.cut=prev.cut, Group = Group, random.formula=NULL, return_plots = FALSE, return_tables = FALSE, specified_group = specified_group, return_table = F) {
