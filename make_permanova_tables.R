@@ -53,6 +53,7 @@ make_permanova_tables <- function(file_path = file_path, mapper_file = mapper_fi
   write.table(i, file = paste0('core-metrics-results-',file_path,"/",file_path,"_permanova_table.txt"), append = T, quote = F, sep = "\t", row.names = F, col.names = F)
   write.table(round(get(paste0("f_",i,"_permanova")),2), file = paste0('core-metrics-results-',file_path,"/",file_path,"_permanova_table.txt"), append = T, quote = F, sep = "\t", row.names = T, col.names = T)
   }
+  }
 
   
 make_permanova_tables2fac <- function(file_path = file_path, mapper_file = mapper_file, flies_unifrac_table = flies_unifrac_table, pform = pform, beta_div_tests = c("unweighted_unifrac","weighted_unifrac","bray_curtis"), seed_to_set = 42, byval = "terms", stratavar=NULL) {
@@ -88,4 +89,5 @@ make_permanova_tables2fac <- function(file_path = file_path, mapper_file = mappe
   plot(get(paste0("fig_",i)))
   write.table(i, file = paste0('core-metrics-results-',file_path,"/",file_path,"_permanova_table.txt"), append = T, quote = F, sep = "\t", row.names = F, col.names = F)
   write.table(round(get(paste0("f_",i,"_permanova")),2), file = paste0('core-metrics-results-',file_path,"/",file_path,"_permanova_table.txt"), append = T, quote = F, sep = "\t", row.names = T, col.names = T)
+  }
   }
