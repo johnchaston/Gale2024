@@ -19,7 +19,7 @@
 #}
 
 
-make_permanova_tables <- function(file_path = file_path, mapper_file = mapper_file, flies_unifrac_table = flies_unifrac_table, pform = pform, beta_div_tests = c("unweighted_unifrac","weighted_unifrac","bray_curtis"), seed_to_set = 42, byval = "terms") {
+make_permanova_tables <- function(file_path = file_path, mapper_file = mapper_file, flies_unifrac_table = flies_unifrac_table, pform = pform, beta_div_tests = c("unweighted_unifrac","weighted_unifrac","bray_curtis"), seed_to_set = 42, byval = "terms", stratavar=NULL) {
 
   write.table("Permanova tables", file = paste0('core-metrics-results-',file_path,"/",file_path,"_permanova_table.txt"), append = F, quote = F, sep = "\t", row.names = F, col.names = F)
 
@@ -55,7 +55,7 @@ make_permanova_tables <- function(file_path = file_path, mapper_file = mapper_fi
   }
 
   
-make_permanova_tables2fac <- function(file_path = file_path, mapper_file = mapper_file, flies_unifrac_table = flies_unifrac_table, pform = pform, beta_div_tests = c("unweighted_unifrac","weighted_unifrac","bray_curtis"), seed_to_set = 42, byval = "terms") {
+make_permanova_tables2fac <- function(file_path = file_path, mapper_file = mapper_file, flies_unifrac_table = flies_unifrac_table, pform = pform, beta_div_tests = c("unweighted_unifrac","weighted_unifrac","bray_curtis"), seed_to_set = 42, byval = "terms", stratavar=NULL) {
 
   write.table("Permanova tables", file = paste0('core-metrics-results-',file_path,"/",file_path,"_permanova_table.txt"), append = F, quote = F, sep = "\t", row.names = F, col.names = F)
 
