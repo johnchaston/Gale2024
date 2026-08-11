@@ -138,15 +138,22 @@ convert_permanova_to_word <- function(file_path = file_path, table_row_names = t
   new_df2$V13[3:(num_rows+1)] <- as.character(sprintf("%.1f", as.numeric(new_df2$V13[3:(num_rows+1)])))
   new_df2$V14[3:(num_rows+1)] <- as.character(sprintf("%.2f", as.numeric(new_df2$V14[3:(num_rows+1)])))
   new_df2$V15[3:(num_rows+1)] <- as.character(sprintf("%.1f", as.numeric(new_df2$V15[3:(num_rows+1)])))
+  new_df2$V6[3:(num_rows+1)] <- as.character(sprintf("%.2f", as.numeric(new_df2$V6[3:(num_rows+1)])))
+  new_df2$V11[3:(num_rows+1)] <- as.character(sprintf("%.2f", as.numeric(new_df2$V11[3:(num_rows+1)])))
+  new_df2$V16[3:(num_rows+1)] <- as.character(sprintf("%.2f", as.numeric(new_df2$V16[3:(num_rows+1)])))
   new_df2$V5[(num_rows):(num_rows+1)] <- ""
   new_df2$V10[(num_rows):(num_rows+1)] <- ""
   new_df2$V15[(num_rows):(num_rows+1)] <- ""
-  new_df2$V6[3:(num_rows-1)] <- ifelse(new_df2$V6[3:(num_rows-1)] == 0, 0.001,new_df2$V6[3:(num_rows-1)])
-  new_df2$V11[3:(num_rows-1)] <- ifelse(new_df2$V11[3:(num_rows-1)] == 0, 0.001,new_df2$V11[3:(num_rows-1)])
-  new_df2$V16[3:(num_rows-1)] <- ifelse(new_df2$V16[3:(num_rows-1)] == 0, 0.001,new_df2$V16[3:(num_rows-1)])
+    new_df2$V6[(num_rows):(num_rows+1)] <- ""
+  new_df2$V11[(num_rows):(num_rows+1)] <- ""
+  new_df2$V16[(num_rows):(num_rows+1)] <- ""
+  new_df2$V6[3:(num_rows-1)] <- ifelse(new_df2$V6[3:(num_rows-1)] == "0.00", "0.001",new_df2$V6[3:(num_rows-1)])
+  new_df2$V11[3:(num_rows-1)] <- ifelse(new_df2$V11[3:(num_rows-1)] == "0.00", "0.001",new_df2$V11[3:(num_rows-1)])
+  new_df2$V16[3:(num_rows-1)] <- ifelse(new_df2$V16[3:(num_rows-1)] == "0.00", "0.001",new_df2$V16[3:(num_rows-1)])
   col6replace <- which(as.character(new_df2$V6) == "0.001")
   col11replace <- which(as.character(new_df2$V11) == "0.001")
   col16replace <- which(as.character(new_df2$V16) == "0.001")
+  
   
   format_sig_digits(as.numeric(new_df2$V6[3:(num_rows-1)]))
   
